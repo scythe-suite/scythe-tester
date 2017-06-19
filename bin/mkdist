@@ -1,0 +1,49 @@
+#!/bin/bash -e
+
+echocol() { echo -e "\033[31m$@...\033[0m " >&2; }
+
+echocol "Setup dirs"
+
+tempdir=$(mktemp -d /tmp/sf-XXXXXXXXX) || exit 1
+
+mkdir -p $tempdir/dist
+rm -rf ./release
+mkdir -p ./release
+mkdir -p ./vendor
+
+echocol "Vendorizing [begin]"
+
+if [ ! -r ./vendor/redis ]; then
+    echocol "Getting redis"
+    curl -sL https://github.com/andymccurdy/redis-py/archive/2.10.5.tar.gz | tar -C ./vendor --strip 1 --wildcards -zxvf - '*/redis'
+fi
+if [ ! -r ./vendor/rq ]; then
+    echocol "Getting rq"
+    curl -sL https://github.com/nvie/rq/archive/v0.8.0.tar.gz | tar -C ./vendor --strip 1 --wildcards -zxvf - '*/rq'
+fi
+if [ ! -r ./vendor/click ]; then
+    echocol "Getting click"
+    curl -sL https://github.com/pallets/click/archive/6.7.tar.gz | tar -C ./vendor --strip 1 --wildcards -zxvf - '*/click'
+fi
+
+echocol "Vendorizing [end]"
+
+echocol "Copying source files to dist"
+
+cp -rv ./src/{st,__main__.py} $tempdir/dist
+cp -rv ./vendor/* $tempdir/dist
+
+echocol "Compiling and removing source files"
+
+( cd $tempdir/dist; python -m compileall . )
+find $tempdir/dist -name \*.py -exec rm {} \;
+
+echocol "Preparing zip file"
+
+rm -f $(pwd)/release/st
+( cd $tempdir/dist;  zip -9r $tempdir/st.zip . )
+echo '#!/usr/bin/env python' > $(pwd)/release/st
+cat $tempdir/st.zip >> $(pwd)/release/st
+chmod u+rx $(pwd)/release/st
+
+rm -rf $tempdir
