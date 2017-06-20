@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+(cd ../..; ./bin/mkdist) && cp ../../release/st .
+
 export REPO=scythe/testrunner
 if [ ! -z $TRAVIS ]; then
     export TAG=$(if [ "$TRAVIS_BRANCH" == "master" ]; then echo 'latest'; else echo "$TRAVIS_BRANCH"; fi)
@@ -13,9 +15,9 @@ last_release_url=$(curl -sLo /dev/null -w '%{url_effective}' "https://github.com
 SCYTHE_TESTER_VERSION="${last_release_url##*/v}"
 
 last_release_url=$(curl -sLo /dev/null -w '%{url_effective}' "https://github.com/scythe-suite/sim-fun-i/releases/latest")
-SIM_FUN_I_VERSION="${last_release_url##*/v}"
+SIM_FUN_I_VERSION="${last_release_url##*/}"
 
-docker build -f Dockerfile --build-arg userid="$(id -u)" --build-arg st_version="$SCYTHE_TESTER_VERSION" --build-arg sf_version="$SIM_FUN_I_VERSION" -t $REPO:$COMMIT .
+docker build -f Dockerfile --build-arg userid="$(id -u)" --build-arg version="$SIM_FUN_I_VERSION" -t $REPO:$COMMIT .
 docker tag $REPO:$COMMIT $REPO:$TAG
 docker tag $REPO:$COMMIT $REPO:$SCYTHE_TESTER_VERSION
 if [ ! -z $TRAVIS ]; then
@@ -24,3 +26,5 @@ fi
 if [ ! -z $1 ]; then
     docker push $REPO
 fi
+
+rm -f st
