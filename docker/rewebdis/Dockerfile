@@ -1,4 +1,5 @@
 FROM alpine:3.6
+MAINTAINER Massimo Santini "santini@di.unimi.it"
 
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
 RUN addgroup -S redis && adduser -S -G redis redis
@@ -68,8 +69,9 @@ RUN mkdir /data && chown redis:redis /data
 VOLUME /data
 WORKDIR /data
 
-#COPY docker-entrypoint.sh /usr/local/bin/
-#ENTRYPOINT ["docker-entrypoint.sh"]
+COPY rewebdis.sh /usr/local/bin/
+RUN chmod a+rx /usr/local/bin/rewebdis.sh
+CMD ["/usr/local/bin/rewebdis.sh"]
 
-#EXPOSE 6379
-#CMD ["redis-server"]
+EXPOSE 7379
+EXPOSE 6379
