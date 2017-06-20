@@ -20,7 +20,7 @@ def ts2iso(timestamp):
     return datetime.fromtimestamp(int(timestamp)/1000).isoformat()
 
 @job('default', connection = redis)
-def process(path, session_id, uid, timestamp, clean = False):
+def process(tar_data, session_id, uid, timestamp, clean = False):
 
     timestamps_key = 'timestamps:{}:{}'.format(session_id, uid)
     solutions_key = 'solutions:{}:{}'.format(uid, timestamp)
@@ -36,7 +36,7 @@ def process(path, session_id, uid, timestamp, clean = False):
         for key in timestamps_key, solutions_key, compilations_key, results_key:
             redis.delete(key)
 
-    temp_dir = tar2tmpdir(join(path, uid, timestamp + '.tar'))
+    temp_dir = tar2tmpdir(tar_data)
     LOGGER.info('Processing upload by uid {} at {} (in {})'.format(uid, ts2iso(timestamp), temp_dir))
 
     for exercise_path in glob(join(temp_dir, '*')):
@@ -84,5 +84,6 @@ def scan(path, session_id, clean = False):
         m = UID_TIMESTAMP_RE.match(tf)
         if m:
             gd = m.groupdict()
-            process.delay(path, session_id, gd['uid'], gd['timestamp'], clean)
+            with open(tf, 'rb') as t: tar_data = t.read()
+            process.delay(tar_data, session_id, gd['uid'], gd['timestamp'], clean)
             LOGGER.info('Enqueued upload by uid {} at {}'.format(gd['uid'], ts2iso(gd['timestamp'])))
