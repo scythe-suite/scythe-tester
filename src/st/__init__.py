@@ -29,7 +29,7 @@ def tar2tmpdir(source, decode = False):
     if decode:
         fo = io.BytesIO(decodestring(source))
     else:
-        fo = io.open(source, 'rb')
+        fo = io.BytesIO(source)
     temp_dir = mkdtemp(prefix = 'scythe-', dir = '/tmp' )
     with TarFile.open(mode = 'r', fileobj = fo) as tf:
         try:
