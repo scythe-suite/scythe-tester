@@ -12,7 +12,7 @@ LOG_LEVEL = INFO
 basicConfig(format = '%(asctime)s %(levelname)s: %(message)s', datefmt = '%Y-%m-%d %H:%M:%S', level = LOG_LEVEL)
 LOGGER = getLogger(__name__)
 
-VERSION = '0.1.1'
+VERSION = '0.2.0'
 
 redis = StrictRedis.from_url(environ.get('SCYTHE_REDIS_URL', 'redis://localhost'))
 
