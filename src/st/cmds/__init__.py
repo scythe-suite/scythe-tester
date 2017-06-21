@@ -5,10 +5,10 @@ from traceback import format_exception_only
 
 from st import VERSION
 
-COMMANDS = 'import', 'scan', 'watch', 'rqcli', 'start', 'logs'
+COMMANDS = 'import', 'scan', 'watch', 'rqcli', 'start', 'logs', 'results'
 
 def main():
-    if 'SCYTHE_DEBUG' not in environ:
+    if 'ST_DEBUG' not in environ:
         sys.excepthook = lambda t, v, tb: sys.exit('The following error occurred: ' + format_exception_only(t, v)[0].strip())
     try:
         subcommand = sys.argv.pop(1)
