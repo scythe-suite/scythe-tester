@@ -6,7 +6,7 @@ from rq import Worker
 from st import redis
 
 def main():
-    parser = ArgumentParser(prog = 'scythe start')
+    parser = ArgumentParser(prog = 'st start')
     parser.add_argument('--num_workers', '-w', help = 'The number of workers.', required = True, type = int)
     parser.add_argument('--clean', '-c', default = False, help = 'Whether to clean previous rq status.', action = 'store_true')
     args = parser.parse_args()
@@ -16,8 +16,8 @@ def main():
 
     processes = []
     for n in range(args.num_workers):
-        worker = Worker('default', name = 'Scythe-worker-{}'.format(n), connection = redis)
-        p = Process(target = worker.work, kwargs = {'logging_level': 'WARNING'})
+        worker = Worker('scythe', name = 'Scythe-worker-{}'.format(n), connection = redis)
+        p = Process(target = worker.work)
         p.start()
         processes.append(p)
     for p in processes: p.join()

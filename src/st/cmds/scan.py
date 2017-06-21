@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from st.upload import scan
 
 def main():
-    parser = ArgumentParser(prog = 'scythe scan')
+    parser = ArgumentParser(prog = 'st scan')
     parser.add_argument('--harvests_dir', '-H', help = 'The harvests directory.', required = True)
     parser.add_argument('--session_id', '-s', help = 'The session identifier.', required = True)
     parser.add_argument('--no-clean', '-n', default = False, help = 'Whether to start from a clean result state.', action = 'store_true')
