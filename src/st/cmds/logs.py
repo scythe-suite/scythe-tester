@@ -1,7 +1,5 @@
 from argparse import ArgumentParser
 
-from st.config import add
-
 from st import redis
 
 def main():
