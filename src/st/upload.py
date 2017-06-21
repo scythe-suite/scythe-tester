@@ -36,7 +36,6 @@ class RedisHandler(Handler):
 PROCESS_LOG = getLogger('PROCESS_LOG')
 PROCESS_LOG.setLevel(INFO)
 PROCESS_LOG.addHandler(RedisHandler(redis))
-PROCESS_LOG.info('Start')
 
 def ts2iso(timestamp):
     return datetime.fromtimestamp(int(timestamp)/1000).isoformat()
