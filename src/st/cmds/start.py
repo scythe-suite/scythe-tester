@@ -17,7 +17,7 @@ def main():
     processes = []
     for n in range(args.num_workers):
         worker = Worker('default', name = 'Scythe-worker-{}'.format(n), connection = redis)
-        p = Process(target = worker.work)
+        p = Process(target = worker.work, kwargs = {'logging_level': 'WARNING'})
         p.start()
         processes.append(p)
     for p in processes: p.join()
