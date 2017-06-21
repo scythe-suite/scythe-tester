@@ -5,7 +5,7 @@ from traceback import format_exception_only
 
 from st import VERSION
 
-COMMANDS = 'import', 'scan', 'watch', 'rqcli', 'start'
+COMMANDS = 'import', 'scan', 'watch', 'rqcli', 'start', 'logs'
 
 def main():
     if 'SCYTHE_DEBUG' not in environ:
