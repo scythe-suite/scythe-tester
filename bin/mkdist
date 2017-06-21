@@ -51,3 +51,11 @@ cat $tempdir/st.zip >> $(pwd)/release/st
 chmod u+rx $(pwd)/release/st
 
 rm -rf $tempdir
+
+echocol "Building rewebdis docker image"
+
+(cd ./docker/rewebdis; ./build.sh)
+
+echocol "Building testrunner docker image"
+
+(cd ./docker/testrunner; ./build.sh)
