@@ -36,7 +36,6 @@ def scan(harvests_path, session_id, clean = False):
     harvest_path = join(harvests_path, session_id)
     if not isdir(harvest_path): raise IOError('{} is not a directory'.format(harvest_path))
     LOGGER.info('Processing session {}'.format(session_id))
-    store = Store(session_id)
     for path in glob(join(harvest_path, '*', '[0-9]*.tar')):
         stage(session_id, path, clean)
 

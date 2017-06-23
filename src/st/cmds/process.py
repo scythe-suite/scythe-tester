@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 
 from st.harvest import process
+from st.store import Store
 
 def main():
     parser = ArgumentParser(prog = 'st process')
@@ -8,5 +9,5 @@ def main():
     parser.add_argument('--clean', '-c', default = False, help = 'Whether to clean previous staged jobs.', action = 'store_true')
     args = parser.parse_args()
 
-    if args.clean: store.jobs_clean()
+    if args.clean: Store.jobs_clean()
     process(args.num_workers)
