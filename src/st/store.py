@@ -23,26 +23,66 @@ from sf.testcases import TestCases
 
 from st import TEST_UID
 
+
+class RedisHandler(Handler):
+    MAX_MESSAGES = 1000
+    KEY = 'log'
+    FORMATTER = Formatter('%(process)d|%(asctime)s|%(levelname)s|%(message)s', '%Y-%m-%d %H:%M:%S')
+    def __init__(self, redis):
+        super(RedisHandler, self).__init__(INFO)
+        self.redis = redis
+    def emit(self, record):
+        try:
+            if self.MAX_MESSAGES:
+                p = self.redis.pipeline()
+                p.rpush(self.KEY, self.FORMATTER.format(record))
+                p.ltrim(self.KEY, -self.MAX_MESSAGES, -1)
+                p.execute()
+            else:
+                self.redis_client.rpush(self.KEY, self.FORMATTER.format(record))
+        except:
+            pass
+
+
 class Store(object):
 
     REDIS = StrictRedis.from_url(environ.get('SCYTHE_REDIS_URL', 'redis://localhost'))
+    JOBS_KEY = 'jobs'
+    LOGGER = getLogger('STORE_LOGGER')
+    LOGGER.setLevel(INFO)
+    LOGGER.addHandler(RedisHandler(REDIS))
 
     def __init__(self, session_id):
         self.session_id = session_id
-        self.jobs_key = 'jobs:{}'.format(session_id)
         self.uids_key = 'uids:{}'.format(session_id)
         self.cases_key = 'cases:{}'.format(session_id)
         self.texts_key = 'texts:{}'.format(session_id)
-        self.logger = getLogger('PROCESS_LOG')
-        self.logger.setLevel(INFO)
-        self.logger.addHandler(RedisHandler(self.REDIS))
 
-    @classmethod
-    def getlogentry(cls, follow):
+    @staticmethod
+    def getlogentry(follow):
         if follow:
-            return cls.REDIS.blpop('log', 0)[1]
+            return Store.REDIS.blpop('log', 0)[1]
         else:
-            return cls.REDIS.lpop('log')
+            return Store.REDIS.lpop('log')
+    @staticmethod
+    def jobs_clean():
+        Store.REDIS.delete(Store.JOBS_KEY)
+
+    @staticmethod
+    def jobs_enqueue(session_id, uid, timestamp, tar_data, clean = False):
+        job = {'tar_data': encodestring(tar_data), 'session_id': session_id, 'uid': uid, 'timestamp': timestamp, 'clean': clean}
+        return Store.JOBS_KEY, Store.REDIS.rpush(Store.JOBS_KEY, dumps(job))
+
+    @staticmethod
+    def jobs_dequeue():
+        try:
+            job = Store.REDIS.blpop(Store.JOBS_KEY, 0)
+        except KeyboardInterrupt:
+            Store.LOGGER.info('Job dequeueing interrupted')
+            return None
+        job = loads(job[1])
+        job['tar_data'] = decodestring(job['tar_data'])
+        return job
 
     def set_harvest(self, uid, timestamp):
         self.uid = uid
@@ -51,23 +91,6 @@ class Store(object):
         self.solutions_key = 'solutions:{}:{}'.format(uid, timestamp)
         self.compilations_key = 'compilations:{}:{}'.format(uid, timestamp)
         self.results_key = 'results:{}:{}'.format(uid, timestamp)
-
-    def jobs_clean(self):
-        Store.REDIS.delete(self.jobs_key)
-
-    def jobs_enqueue(self, uid, timestamp, tar_data, clean = False):
-        job = {'tar_data': encodestring(tar_data), 'uid': uid, 'timestamp': timestamp, 'clean': clean}
-        return self.jobs_key, Store.REDIS.rpush(self.jobs_key, dumps(job))
-
-    def jobs_dequeue(self):
-        try:
-            job = Store.REDIS.blpop(self.jobs_key, 0)
-        except KeyboardInterrupt:
-            self.logger.info('Job dequeueing interrupted')
-            return None
-        job = loads(job[1])
-        job['tar_data'] = decodestring(job['tar_data'])
-        return job
 
     def uids_clean(self):
         Store.REDIS.delete(self.uids_key)
@@ -150,22 +173,3 @@ class Store(object):
     def results_getall(self):
         results = Store.REDIS.hgetall(self.results_key)
         return dict((name, TestCases.from_list_of_dicts(loads(results_list))) for name, results_list in results.items())
-
-class RedisHandler(Handler):
-    MAX_MESSAGES = 1000
-    KEY = 'log'
-    FORMATTER = Formatter('%(process)d|%(asctime)s|%(levelname)s|%(message)s', '%Y-%m-%d %H:%M:%S')
-    def __init__(self, redis):
-        super(RedisHandler, self).__init__(INFO)
-        self.redis = redis
-    def emit(self, record):
-        try:
-            if self.MAX_MESSAGES:
-                p = self.redis.pipeline()
-                p.rpush(self.KEY, self.FORMATTER.format(record))
-                p.ltrim(self.KEY, -self.MAX_MESSAGES, -1)
-                p.execute()
-            else:
-                self.redis_client.rpush(self.KEY, self.FORMATTER.format(record))
-        except:
-            pass
