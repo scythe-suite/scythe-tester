@@ -27,8 +27,7 @@ def process(store, num_workers = 1):
     try:
         while True: sleep(10)
     except KeyboardInterrupt:
-        store.logger.info('Got KeyboardInterrupt, stopping workers')
-        for p in processes: store.jobs_poison()
+        store.logger.info('Got KeyboardInterrupt')
         for p in processes: p.join()
         store.logger.info('All workers threads have been joined')
 
@@ -38,13 +37,13 @@ def stage(store, path, clean = False):
     gd = m.groupdict()
     with open(path, 'rb') as t: tar_data = t.read()
     store.jobs_enqueue(gd['uid'], gd['timestamp'], tar_data, clean)
-    LOGGER.info('Enqueued upload by uid {} at {}'.format(gd['uid'], ts2iso(gd['timestamp'])))
+    LOGGER.info('Staged harvest by uid {} at {}'.format(gd['uid'], ts2iso(gd['timestamp'])))
 
 def add(store, tar_data, uid, timestamp, clean = False):
 
     store.set_harvest(uid, timestamp)
 
-    if not clean and store.timestamps_contains(uid):
+    if not clean and store.timestamps_contained():
         store.logger.info('Skipping upload by uid {} at {}'.format(uid, ts2iso(timestamp)))
         return
 
@@ -88,7 +87,7 @@ def add(store, tar_data, uid, timestamp, clean = False):
         cases = store.cases_get(exercise_name)
         n = cases.fill_actual(solution)
         store.logger.info( 'Run {} test cases for {}'.format(n, exercise_name))
-        store.cases_add(exercise_name, cases, ('input', 'args', 'expected'))
+        store.results_add(exercise_name, cases)
 
     rmrotree(temp_dir)
     store.timestamps_add()
@@ -96,7 +95,7 @@ def add(store, tar_data, uid, timestamp, clean = False):
 def scan(harvests_path, session_id, clean = False):
     harvest_path = join(harvests_path, session_id)
     if not isdir(harvest_path): raise IOError('{} is not a directory'.format(harvest_path))
-    LOGGER.info('Processing session {} uploads'.format(session_id))
+    LOGGER.info('Processing session {}'.format(session_id))
     store = Store(session_id)
     for path in glob(join(harvest_path, '*', '[0-9]*.tar')):
         stage(store, path, clean)

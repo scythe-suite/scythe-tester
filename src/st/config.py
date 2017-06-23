@@ -30,7 +30,7 @@ def add(path, session_id, clean = False):
         store.cases_clean()
         store.texts_clean()
 
-    n = store.uids_add(config['REGISTERED_UIDS'].items())
+    n = store.uids_addall(config['REGISTERED_UIDS'].items())
     LOGGER.info('Imported {} uid(s)'.format(n))
 
     temp_dir = tar2tmpdir(decodestring(config['TAR_DATA']))
@@ -42,7 +42,7 @@ def add(path, session_id, clean = False):
         if len(exercise_cases) == 0:
             LOGGER.warn('Missing cases for {}'.format(exercise_name))
         else:
-            n = store.cases_add(exercise_name, exercise_cases, ('diffs', 'errors', 'actual'))
+            n = store.cases_add(exercise_name, exercise_cases)
             LOGGER.info('Imported {} case(s) for exercise {}'.format(n, exercise_name))
 
         list_of_texts = []

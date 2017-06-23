@@ -8,8 +8,6 @@ from shutil import rmtree
 from tarfile import TarFile
 from tempfile import mkdtemp
 
-from redis import StrictRedis
-
 LOG_LEVEL = INFO
 basicConfig(format = '%(asctime)s %(levelname)s: %(message)s', datefmt = '%Y-%m-%d %H:%M:%S', level = LOG_LEVEL)
 LOGGER = getLogger(__name__)
@@ -17,8 +15,6 @@ LOGGER = getLogger(__name__)
 VERSION = '0.2.0'
 
 TEST_UID = '000000' # see scythe/bin/scythe-prepare
-
-redis = StrictRedis.from_url(environ.get('SCYTHE_REDIS_URL', 'redis://localhost'))
 
 def ts2iso(timestamp):
     return datetime.fromtimestamp(int(timestamp)/1000).isoformat()

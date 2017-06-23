@@ -6,4 +6,4 @@ COPY st /bin
 RUN chmod a+rx /bin/sf /bin/st
 ENV PYTHONPATH=/bin/sf:/bin/st
 ENTRYPOINT [ "/bin/st" ]
-CMD [ "start", "-c", "-w", "8" ]
+CMD [ "process", "-c", "-w", "8" ]

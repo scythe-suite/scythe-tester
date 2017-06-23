@@ -2,7 +2,7 @@
 
 echocol() { echo -e "\033[31m$@...\033[0m " >&2; }
 
-if [ -z "$1" ]; then
+if [ -z "$2" ]; then
     exec >/dev/null
 fi
 
@@ -20,14 +20,6 @@ echocol "Vendorizing [begin]"
 if [ ! -r ./vendor/redis ]; then
     echocol "Getting redis"
     curl -sL https://github.com/andymccurdy/redis-py/archive/2.10.5.tar.gz | tar -C ./vendor --strip 1 --wildcards -zxvf - '*/redis'
-fi
-if [ ! -r ./vendor/rq ]; then
-    echocol "Getting rq"
-    curl -sL https://github.com/nvie/rq/archive/v0.8.0.tar.gz | tar -C ./vendor --strip 1 --wildcards -zxvf - '*/rq'
-fi
-if [ ! -r ./vendor/click ]; then
-    echocol "Getting click"
-    curl -sL https://github.com/pallets/click/archive/6.7.tar.gz | tar -C ./vendor --strip 1 --wildcards -zxvf - '*/click'
 fi
 
 echocol "Vendorizing [end]"
@@ -52,6 +44,8 @@ chmod u+rx $(pwd)/release/st
 
 rm -rf $tempdir
 
+if [ ! -z $1 ]; then
+
 echocol "Building rewebdis docker image"
 
 (cd ./docker/rewebdis; ./build.sh)
@@ -59,3 +53,5 @@ echocol "Building rewebdis docker image"
 echocol "Building testrunner docker image"
 
 (cd ./docker/testrunner; ./build.sh)
+
+fi

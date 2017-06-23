@@ -23,8 +23,6 @@ from sf.testcases import TestCases
 
 from st import TEST_UID
 
-POISON = '<POISON>'
-
 class Store(object):
 
     REDIS = StrictRedis.from_url(environ.get('SCYTHE_REDIS_URL', 'redis://localhost'))
@@ -59,18 +57,14 @@ class Store(object):
 
     def jobs_enqueue(self, uid, timestamp, tar_data, clean = False):
         job = {'tar_data': encodestring(tar_data), 'uid': uid, 'timestamp': timestamp, 'clean': clean}
-        Store.REDIS.rpush(self.jobs_key, dumps(job))
-
-    def jobs_poison(self):
-        Store.REDIS.rpush(self.jobs_key, POISON)
+        return self.jobs_key, Store.REDIS.rpush(self.jobs_key, dumps(job))
 
     def jobs_dequeue(self):
         try:
             job = Store.REDIS.blpop(self.jobs_key, 0)
         except KeyboardInterrupt:
             self.logger.info('Job dequeueing interrupted')
-            job = None
-        if job == POISON or job is None: return None
+            return None
         job = loads(job[1])
         job['tar_data'] = decodestring(job['tar_data'])
         return job
@@ -78,24 +72,31 @@ class Store(object):
     def uids_clean(self):
         Store.REDIS.delete(self.uids_key)
 
-    def uids_add(self, uids_infos, status = 'registered'):
+    def uids_addall(self, uids_infos, status = 'registered'):
         n = 0
         for uid, info in uids_infos:
             if uid == TEST_UID: continue
             n += Store.REDIS.sadd(self.uids_key, dumps({'uid': uid, 'info': info, 'status': status}))
         return n
 
+    def uids_getall(self):
+        return list(map(loads, Store.REDIS.smembers(self.uids_key)))
+
     def cases_clean(self):
         Store.REDIS.delete(self.cases_key)
 
-    def cases_add(self, exercise_name, cases, kinds_to_skip = ()):
-        list_of_cases = cases.to_list_of_dicts(kinds_to_skip)
+    def cases_add(self, exercise_name, cases):
+        list_of_cases = cases.to_list_of_dicts(('diffs', 'errors', 'actual'))
         Store.REDIS.hset(self.cases_key, exercise_name, dumps(list_of_cases))
         return len(list_of_cases)
 
     def cases_get(self, exercise_name):
         cases = Store.REDIS.hget(self.cases_key, exercise_name)
         return TestCases.from_list_of_dicts(loads(cases))
+
+    def cases_getall(self):
+        cases = Store.REDIS.hgetall(self.cases_key)
+        return dict((name, TestCases.from_list_of_dicts(loads(cases_list))) for name, cases_list in cases.items())
 
     def texts_clean(self):
         Store.REDIS.delete(self.texts_key)
@@ -107,11 +108,16 @@ class Store(object):
     def timestamps_clean(self):
         Store.REDIS.zrem(self.timestamps_key, self.timestamp)
 
-    def timestamps_contains(self):
-        return Store.REDIS.zscore(self.timestamps_key, timestamp) != 0
+    def timestamps_contained(self):
+        return Store.REDIS.zscore(self.timestamps_key, self.timestamp) is not None
+
+    def timestamps_last(self):
+        last = Store.REDIS.zrange(self.timestamps_key, -1, -1)
+        if not last: return None
+        return last[0]
 
     def timestamps_add(self):
-        return Store.REDIS.zadd(self.timestamps_key, self.timestamp, float(self.timestamp))
+        return Store.REDIS.zadd(self.timestamps_key, float(self.timestamp), self.timestamp)
 
     def solutions_clean(self):
         Store.REDIS.delete(self.solutions_key)
@@ -120,18 +126,30 @@ class Store(object):
         Store.REDIS.hset(self.solutions_key, exercise_name, dumps(list_of_solutions))
         return len(list_of_solutions)
 
+    def solutions_getall(self):
+        solutions = Store.REDIS.hgetall(self.solutions_key)
+        return dict((name, loads(solutions_list)) for name, solutions_list in solutions.items())
+
     def compilations_clean(self):
         Store.REDIS.delete(self.compilations_key)
 
     def compilations_add(self, exercise_name, compiler_message):
         return Store.REDIS.hset(self.compilations_key, exercise_name, compiler_message)
 
+    def compilations_getall(self):
+        return Store.REDIS.hgetall(self.compilations_key)
+
     def results_clean(self):
         Store.REDIS.delete(self.results_key)
 
-    def results_add(self, exercise_name, cases):
-        Store.REDIS.hset(self.results_key, exercise_name, dumps(cases.to_list_of_dicts(('input', 'args', 'expected'))))
-        return len(cases)
+    def results_add(self, exercise_name, results):
+        list_of_results = results.to_list_of_dicts(('input', 'args', 'expected'))
+        Store.REDIS.hset(self.results_key, exercise_name, dumps(list_of_results))
+        return len(list_of_results)
+
+    def results_getall(self):
+        results = Store.REDIS.hgetall(self.results_key)
+        return dict((name, TestCases.from_list_of_dicts(loads(results_list))) for name, results_list in results.items())
 
 class RedisHandler(Handler):
     MAX_MESSAGES = 1000
