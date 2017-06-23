@@ -1,18 +1,13 @@
 from argparse import ArgumentParser
 
-from st import redis
+from st.store import Store
 
 def main():
-    parser = ArgumentParser(prog = 'st log')
+    parser = ArgumentParser(prog = 'st logs')
     parser.add_argument('--follow', '-f', default = False, help = 'Whether to keep waiting for new logs.', action = 'store_true')
-
     args = parser.parse_args()
 
-    if args.follow:
-        while True:
-            print redis.blpop('log', 0)[1]
-    else:
-        while True:
-            record = redis.lpop('log')
-            if not record: break
-            print record
+    while True:
+        record = Store.getlogentry(args.follow)
+        if not record: break
+        print record

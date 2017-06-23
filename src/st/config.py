@@ -1,3 +1,4 @@
+from base64 import decodestring
 from glob import glob
 import io
 from json import dumps, loads
@@ -6,7 +7,8 @@ from os.path import join, basename, dirname, splitext
 from sf import DEFAULT_ENCODING
 from sf.testcases import TestCases
 
-from st import redis, tar2tmpdir, rmrotree, LOGGER
+from st import tar2tmpdir, rmrotree, LOGGER
+from st.store import Store
 
 TEXTS_GLOB = '*.md'
 
@@ -16,31 +18,32 @@ def add(path, session_id, clean = False):
     with open(path, 'r') as f: exec(f, config)
     LOGGER.info('Read session {} configuration'.format(session_id))
 
+    store = Store(session_id)
+
     uids_key = 'uids:{}'.format(session_id)
     cases_key = 'cases:{}'.format(session_id)
     texts_key = 'texts:{}'.format(session_id)
 
     if clean:
         LOGGER.info('Cleaning session {} configuration'.format(session_id))
-        redis.delete(uids_key)
-        redis.delete(cases_key)
-        redis.delete(texts_key)
+        store.uids_clean()
+        store.cases_clean()
+        store.texts_clean()
 
-    for uid, info in config['REGISTERED_UIDS'].items():
-        redis.sadd(uids_key, dumps({'uid': uid, 'info': info, 'status': 'registered'}))
-    LOGGER.info('Imported uids')
+    n = store.uids_add(config['REGISTERED_UIDS'].items())
+    LOGGER.info('Imported {} uid(s)'.format(n))
 
-    temp_dir = tar2tmpdir(config['TAR_DATA'], decode = True)
+    temp_dir = tar2tmpdir(decodestring(config['TAR_DATA']))
 
     for exercise_path in glob(join(temp_dir, '*')):
 
         exercise_name = basename(exercise_path)
-        list_of_cases = TestCases(exercise_path).to_list_of_dicts(('diffs', 'errors', 'actual'))
-        if not list_of_cases:
+        exercise_cases = TestCases(exercise_path)
+        if len(exercise_cases) == 0:
             LOGGER.warn('Missing cases for {}'.format(exercise_name))
         else:
-            redis.hset(cases_key, exercise_name, dumps(list_of_cases))
-            LOGGER.info('Imported cases for exercise {}'.format(exercise_name))
+            n = store.cases_add(exercise_name, exercise_cases, ('diffs', 'errors', 'actual'))
+            LOGGER.info('Imported {} case(s) for exercise {}'.format(n, exercise_name))
 
         list_of_texts = []
         for text_path in glob(join(exercise_path, TEXTS_GLOB)):
@@ -50,7 +53,7 @@ def add(path, session_id, clean = False):
         if not list_of_texts:
             LOGGER.warn('Missing texts for {}'.format(exercise_name))
         else:
-            redis.hset(texts_key, exercise_name, dumps(list_of_texts))
-            LOGGER.info('Imported texts for exercise {}'.format(exercise_name))
+            n = store.texts_add(exercise_name, list_of_texts)
+            LOGGER.info('Imported {} text(s) for exercise {}'.format(n, exercise_name))
 
     rmrotree(temp_dir)

@@ -5,7 +5,7 @@ from traceback import format_exception_only
 
 from st import VERSION
 
-COMMANDS = 'import', 'scan', 'watch', 'rqcli', 'start', 'logs', 'results'
+COMMANDS = 'configure', 'stage', 'process', 'logs', 'results'
 
 def main():
     if 'ST_DEBUG' not in environ:
