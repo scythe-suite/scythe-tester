@@ -57,6 +57,7 @@ class Store(object):
         self.uids_key = 'uids:{}'.format(session_id)
         self.cases_key = 'cases:{}'.format(session_id)
         self.texts_key = 'texts:{}'.format(session_id)
+        self.summaries_key = 'summaries:{}'.format(session_id)
 
     @staticmethod
     def getlogentry(follow):
@@ -173,3 +174,12 @@ class Store(object):
     def results_getall(self):
         results = Store.REDIS.hgetall(self.results_key)
         return dict((name, TestCases.from_list_of_dicts(loads(results_list))) for name, results_list in results.items())
+
+    def cases_clean(self):
+        Store.REDIS.delete(self.summaries_key)
+
+    def summary_clean(self):
+        Store.REDIS.hdel(self.summaries_key, self.uid)
+
+    def summary_add(self, name, compilation, errors, diffs, ok):
+        Store.REDIS.hset(self.summaries_key, self.uid, dumps({'name': name, 'compile': compilation, 'errors': errors, 'diffs': diffs, 'ok': ok}))

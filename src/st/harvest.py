@@ -64,6 +64,7 @@ def add(session_id, tar_data, uid, timestamp, clean = False):
         store.solutions_clean()
         store.compilations_clean()
         store.results_clean()
+        store.summary_clean()
 
     temp_dir = tar2tmpdir(tar_data)
     Store.LOGGER.info('Processing upload by uid {} at {} (in {})'.format(uid, ts2iso(timestamp), temp_dir))
@@ -99,6 +100,11 @@ def add(session_id, tar_data, uid, timestamp, clean = False):
         n = cases.fill_actual(solution)
         Store.LOGGER.info( 'Run {} test cases for {}'.format(n, exercise_name))
         store.results_add(exercise_name, cases)
+
+        errors = len([1 for case in cases.values() if case.errors is not None])
+        diffs = len([1 for case in cases.values() if case.diffs is not None])
+        ok = n - errors - diffs
+        store.summary_add(exercise_name, compiler_message == '', errors, diffs, ok)
 
     rmrotree(temp_dir)
     store.timestamps_add()

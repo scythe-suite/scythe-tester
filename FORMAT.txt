@@ -8,4 +8,4 @@ HASH	solutions:<UID>:<TIMESTAMP> -> <EXERCISE_NAME>: JSON([{content: <SOURCE_COD
 HASH	results:<UID>:<TIMESTAMP> -> <EXERCISE_NAME>: JSON([{name: <CASE_NAME>, diffs: <ARGS>, errors: <INPUT>}+])
 HASH	compilations:<UID>:<TIMESTAMP> -> <EXERCISE_NAME>: <COMPILER_OUTPUT>
 
-HASH	summary:<SESSION_ID> -> <UID>: JSON([{name: <EXERCISE_NAME>, compile: <BOOLEAN>: diffs: <NUM_DIFFS>, errors: <NUM_ERRORS>, ok: <NUM_NO_ERRRORS_NO_DIFFS}+])
+HASH	summaries:<SESSION_ID> -> <UID>: JSON([{name: <EXERCISE_NAME>, compile: <BOOLEAN>: diffs: <NUM_DIFFS>, errors: <NUM_ERRORS>, ok: <NUM_OK>}+])
