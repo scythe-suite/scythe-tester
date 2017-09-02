@@ -69,6 +69,7 @@ def add(session_id, tar_data, uid, timestamp, clean = False):
     temp_dir = tar2tmpdir(tar_data)
     Store.LOGGER.info('Processing upload by uid {} at {} (in {})'.format(uid, ts2iso(timestamp), temp_dir))
 
+    summary = []
     for exercise_path in glob(join(temp_dir, '*')):
         exercise_name = basename(exercise_path)
 
@@ -88,13 +89,16 @@ def add(session_id, tar_data, uid, timestamp, clean = False):
         if solution.main_source is None:
             compiler_message = u'Missing (or ambiguous) solution'
             Store.LOGGER.warn('Missing (or ambiguous) solution for {}'.format(exercise_name))
-        compilation_result = solution.compile()
-        if compilation_result.returncode:
-            compiler_message = compilation_result.stderr.decode(DEFAULT_ENCODING)
-            Store.LOGGER.warn( 'Failed to compile exercise {}'.format(exercise_name))
+        else:
+            compilation_result = solution.compile()
+            if compilation_result.returncode:
+                compiler_message = compilation_result.stderr.decode(DEFAULT_ENCODING)
+                Store.LOGGER.warn( 'Failed to compile exercise {}'.format(exercise_name))
         store.compilations_add(exercise_name, compiler_message)
 
-        if compiler_message: continue
+        if compiler_message:
+            summary.append({'name': exercise_name, 'compile': False})
+            continue
         Store.LOGGER.info( 'Compiled solution for exercise {}'.format(exercise_name))
         cases = store.cases_get(exercise_name)
         n = cases.fill_actual(solution)
@@ -104,7 +108,8 @@ def add(session_id, tar_data, uid, timestamp, clean = False):
         errors = len([1 for case in cases.values() if case.errors is not None])
         diffs = len([1 for case in cases.values() if case.diffs is not None])
         ok = n - errors - diffs
-        store.summary_add(exercise_name, compiler_message == '', errors, diffs, ok)
+        summary.append({'name': exercise_name, 'compile': True, 'errors': errors, 'diffs': diffs, 'ok': ok})
 
+    store.summary_add(summary)
     rmrotree(temp_dir)
     store.timestamps_add()

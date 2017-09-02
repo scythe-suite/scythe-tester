@@ -181,5 +181,5 @@ class Store(object):
     def summary_clean(self):
         Store.REDIS.hdel(self.summaries_key, self.uid)
 
-    def summary_add(self, name, compilation, errors, diffs, ok):
-        Store.REDIS.hset(self.summaries_key, self.uid, dumps({'name': name, 'compile': compilation, 'errors': errors, 'diffs': diffs, 'ok': ok}))
+    def summary_add(self, summary):
+        Store.REDIS.hset(self.summaries_key, self.uid, dumps(summary))
