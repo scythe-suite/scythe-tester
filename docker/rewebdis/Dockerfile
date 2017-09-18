@@ -7,11 +7,11 @@ RUN addgroup -S redis && adduser -S -G redis redis
 # grab su-exec for easy step-down from root
 RUN apk add --no-cache 'su-exec>=0.2'
 
-ENV REDIS_VERSION 3.2.9
+ENV REDIS_VERSION 3.2.10
 ENV REDIS_DOWNLOAD_URL http://download.redis.io/releases/redis-3.2.9.tar.gz
 ENV REDIS_DOWNLOAD_SHA 6eaacfa983b287e440d0839ead20c2231749d5d6b78bbe0e0ffa3a890c59ff26
 
-ENV WEBDIS_RELEASE 0.1.2
+ENV WEBDIS_RELEASE 0.1.3
 ENV WEBDIS_DOWNLOAD_URL https://github.com/nicolasff/webdis/archive/0.1.2.tar.gz
 ENV WEBDIS_DOWNLOAD_SHA 8e46093af006e35354f6b3d58a70e3825cd0c074893be318f1858eddbe1cda86
 
@@ -63,15 +63,15 @@ RUN set -ex; \
 	rm -r /usr/src/webdis; \
 	\
 	apk del .build-deps; \
-	apk add --no-cache libevent
+	apk add --no-cache libevent supervisor
 
 RUN mkdir /data && chown redis:redis /data
 VOLUME /data
 WORKDIR /data
 
-COPY rewebdis.sh /usr/local/bin/
-RUN chmod a+rx /usr/local/bin/rewebdis.sh
-CMD ["/usr/local/bin/rewebdis.sh"]
+COPY supervisord.conf /etc/supervisord.conf
 
 EXPOSE 7379
 EXPOSE 6379
+
+ENTRYPOINT	["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
