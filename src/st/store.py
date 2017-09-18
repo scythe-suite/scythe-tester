@@ -72,7 +72,7 @@ class Store(object):
     @staticmethod
     def jobs_enqueue(session_id, uid, timestamp, tar_data, clean = False):
         job = {'tar_data': encodestring(tar_data), 'session_id': session_id, 'uid': uid, 'timestamp': timestamp, 'clean': clean}
-        return Store.JOBS_KEY, Store.REDIS.rpush(Store.JOBS_KEY, dumps(job))
+        Store.REDIS.rpush(Store.JOBS_KEY, dumps(job))
 
     @staticmethod
     def jobs_dequeue():
