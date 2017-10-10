@@ -89,13 +89,19 @@ class Store(object):
     def jobs_num():
         return Store.REDIS.llen(Store.JOBS_KEY)
 
-    def set_harvest(self, uid, timestamp):
+    def set_harvest(self, uid, timestamp = None):
         self.uid = uid
-        self.timestamp = timestamp
         self.timestamps_key = 'timestamps:{}:{}'.format(self.session_id, uid)
+        if timestamp is None:
+            last = Store.REDIS.zrange(self.timestamps_key, -1, -1)
+            if not last: return None
+            self.timestamp = last[0]
+        else:
+            self.timestamp = timestamp
         self.solutions_key = 'solutions:{}:{}'.format(uid, timestamp)
         self.compilations_key = 'compilations:{}:{}'.format(uid, timestamp)
         self.results_key = 'results:{}:{}'.format(uid, timestamp)
+        return timestamp
 
     def uids_clean(self):
         Store.REDIS.delete(self.uids_key)
@@ -145,11 +151,6 @@ class Store(object):
 
     def timestamps_contained(self):
         return Store.REDIS.zscore(self.timestamps_key, self.timestamp) is not None
-
-    def timestamps_last(self):
-        last = Store.REDIS.zrange(self.timestamps_key, -1, -1)
-        if not last: return None
-        return last[0]
 
     def timestamps_add(self):
         return Store.REDIS.zadd(self.timestamps_key, float(self.timestamp), self.timestamp)
