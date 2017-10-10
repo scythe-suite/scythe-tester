@@ -24,12 +24,12 @@ def process(num_workers = 1):
                 add(**job)
             except Exception as e:
                 Store.LOGGER.critical('Got an unexpected error: "{}" while processing {}/{}@{}'.format(e, job['session_id'], job['uid'], job['timestamp']) )
-            Store.LOGGER.info('Done {}/{}@{}'.format(job['session_id'], job['uid'], job['timestamp']) )                
-            
+            Store.LOGGER.info('Done {}/{}@{}'.format(job['session_id'], job['uid'], job['timestamp']) )
+
     processes = [Process(target = worker) for _ in range(num_workers)]
     for p in processes: p.start()
     try:
-        while True: 
+        while True:
             sleep(10)
             Store.LOGGER.info('Number of queued jobs: {}'.format(Store.jobs_num()))
     except KeyboardInterrupt:
@@ -126,7 +126,7 @@ def add(session_id, tar_data, uid, timestamp, clean = False):
             summary[exercise_name] = {'compile': False}
             continue
         Store.LOGGER.info( 'Compiled solution for exercise {}'.format(exercise_name))
-        
+
         n = cases.fill_actual(solution)
         Store.LOGGER.info( 'Run {} test cases for {}'.format(n, exercise_name))
         store.results_add(exercise_name, cases)

@@ -95,9 +95,8 @@ class Store(object):
         if timestamp is None:
             last = Store.REDIS.zrange(self.timestamps_key, -1, -1)
             if not last: return None
-            self.timestamp = last[0]
-        else:
-            self.timestamp = timestamp
+            timestamp = last[0]
+        self.timestamp = timestamp
         self.solutions_key = 'solutions:{}:{}'.format(uid, timestamp)
         self.compilations_key = 'compilations:{}:{}'.format(uid, timestamp)
         self.results_key = 'results:{}:{}'.format(uid, timestamp)

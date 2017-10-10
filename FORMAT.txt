@@ -1,4 +1,4 @@
- SET	uids:<SESSION_ID> -> JSON({uid : <UID>, info : <INFO>, status: <STATUS>})
+ SET	 uids:<SESSION_ID> -> JSON({uid : <UID>, info : <INFO>, status: <STATUS>})
 HASH	texts:<SESSION_ID> -> <EXERCISE_NAME>: JSON({name: <TEXT_NAME>, content: <MARKDOWN_TEXT>})
 HASH	cases:<SESSION_ID> -> <EXERCISE_NAME>: JSON([{name: <CASE_NAME>, args: <ARGS>, input: <INPUT>, expected: <EXPECTED>}+])
 
