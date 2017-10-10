@@ -69,9 +69,16 @@ def add(session_id, tar_data, uid, timestamp, clean = False):
     temp_dir = tar2tmpdir(tar_data)
     Store.LOGGER.info('Processing upload by uid {} at {} (in {})'.format(uid, ts2iso(timestamp), temp_dir))
 
-    summary = []
+    summary = {}
+    all_cases = store.cases_getall()
     for exercise_path in glob(join(temp_dir, '*')):
+
         exercise_name = basename(exercise_path)
+        try:
+            cases = all_cases[exercise_name]
+        except KeyError:
+            Store.LOGGER.warn('No cases found for exercise {}'.format(exercise_name))
+            continue
 
         solution = autodetect_solution(exercise_path)
         if solution.sources is None:
@@ -108,8 +115,8 @@ def add(session_id, tar_data, uid, timestamp, clean = False):
         errors = len([1 for case in cases.values() if case.errors is not None])
         diffs = len([1 for case in cases.values() if case.diffs is not None])
         ok = n - errors - diffs
-        summary.append({'name': exercise_name, 'compile': True, 'errors': errors, 'diffs': diffs, 'ok': ok})
+        summary[exercise_name] = {'compile': True, 'errors': errors, 'diffs': diffs, 'ok': ok}
 
-    store.summary_add(summary)
+    store.summary_add({'timestamp': timestamp, 'summary': summary})
     rmrotree(temp_dir)
     store.timestamps_add()
