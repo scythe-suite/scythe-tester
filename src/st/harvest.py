@@ -133,8 +133,8 @@ def add(session_id, tar_data, uid, timestamp, clean = False):
 
         errors = len([1 for case in cases.values() if case.errors is not None])
         diffs = len([1 for case in cases.values() if case.diffs is not None])
-        ok = n - errors - diffs
-        summary[exercise_name] = {'compile': True, 'errors': errors, 'diffs': diffs, 'ok': ok}
+        oks = n - errors - diffs
+        summary[exercise_name] = {'compile': True, 'errors': errors, 'diffs': diffs, 'oks': oks}
 
     store.summary_add(summary)
     rmrotree(temp_dir)

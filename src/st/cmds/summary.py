@@ -26,7 +26,7 @@ def main():
                 continue
             errors = len([1 for case in results[exercise].values() if case.errors is not None])
             diffs = len([1 for case in results[exercise].values() if case.diffs is not None])
-            ok = n - errors - diffs
-            summary[exercise] = {'compile': True, 'errors': errors, 'diffs': diffs, 'ok': ok}
+            oks = n - errors - diffs
+            summary[exercise] = {'compile': True, 'errors': errors, 'diffs': diffs, 'oks': oks}
 
         store.summary_add(summary)
