@@ -29,7 +29,7 @@ class RedisHandler(Handler):
     KEY = 'log'
     FORMATTER = Formatter('%(process)d|%(asctime)s|%(levelname)s|%(message)s', '%Y-%m-%d %H:%M:%S')
     def __init__(self, redis):
-        super(RedisHandler, self).__init__(INFO)
+        super(RedisHandler, self).__init__(WARN)
         self.redis = redis
     def emit(self, record):
         try:
