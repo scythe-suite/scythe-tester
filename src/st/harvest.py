@@ -136,6 +136,6 @@ def add(session_id, tar_data, uid, timestamp, clean = False):
         ok = n - errors - diffs
         summary[exercise_name] = {'compile': True, 'errors': errors, 'diffs': diffs, 'ok': ok}
 
-    store.summary_add({'timestamp': timestamp, 'summary': summary})
+    store.summary_add(summary)
     rmrotree(temp_dir)
     store.timestamps_add()

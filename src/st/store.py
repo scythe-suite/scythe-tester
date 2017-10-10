@@ -193,4 +193,4 @@ class Store(object):
         Store.REDIS.hdel(self.summaries_key, self.uid)
 
     def summary_add(self, summary):
-        Store.REDIS.hset(self.summaries_key, self.uid, dumps(summary))
+        Store.REDIS.hset(self.summaries_key, self.uid, dumps({'timestamp': self.timestamp, 'summary': summary}))
