@@ -14,7 +14,7 @@ HASH	summary:<SESSION_ID> -> <UID>: JSON([{name: <EXERCISE_NAME>, compile: <BOOL
 
 from base64 import decodestring, encodestring
 from json import loads, dumps
-from logging import Handler, Formatter, getLogger, INFO
+from logging import Handler, Formatter, getLogger, INFO, WARN
 from os import environ
 
 from redis import StrictRedis
@@ -85,6 +85,10 @@ class Store(object):
         job['tar_data'] = decodestring(job['tar_data'])
         return job
 
+    @staticmethod
+    def jobs_num():
+        return Store.REDIS.llen(Store.JOBS_KEY)
+
     def set_harvest(self, uid, timestamp):
         self.uid = uid
         self.timestamp = timestamp
@@ -104,7 +108,11 @@ class Store(object):
         return n
 
     def uids_getall(self):
-        return list(map(loads, Store.REDIS.smembers(self.uids_key)))
+        juids = Store.REDIS.smembers(self.uids_key)
+        if juids:
+            return list(map(loads, juids))
+        else:
+            return []
 
     def cases_clean(self):
         Store.REDIS.delete(self.cases_key)
@@ -116,7 +124,10 @@ class Store(object):
 
     def cases_get(self, exercise_name):
         cases = Store.REDIS.hget(self.cases_key, exercise_name)
-        return TestCases.from_list_of_dicts(loads(cases))
+        if cases:
+            return TestCases.from_list_of_dicts(loads(cases))
+        else:
+            return TestCases()
 
     def cases_getall(self):
         cases = Store.REDIS.hgetall(self.cases_key)

@@ -20,29 +20,48 @@ def process(num_workers = 1):
         while True:
             job = Store.jobs_dequeue()
             if job is None: break
-            add(**job)
-
+            try:
+                add(**job)
+            except Exception as e:
+                Store.LOGGER.critical('Got an unexpected error: "{}" while processing {}/{}@{}'.format(e, job['session_id'], job['uid'], job['timestamp']) )
+            Store.LOGGER.info('Done {}/{}@{}'.format(job['session_id'], job['uid'], job['timestamp']) )                
+            
     processes = [Process(target = worker) for _ in range(num_workers)]
     for p in processes: p.start()
     try:
-        while True: sleep(10)
+        while True: 
+            sleep(10)
+            Store.LOGGER.info('Number of queued jobs: {}'.format(Store.jobs_num()))
     except KeyboardInterrupt:
         Store.LOGGER.info('Got KeyboardInterrupt')
         for p in processes: p.join()
         Store.LOGGER.info('All workers threads have been joined')
 
 
-def scan(harvests_path, session_id, clean = False):
-    harvest_path = join(harvests_path, session_id)
-    if not isdir(harvest_path): raise IOError('{} is not a directory'.format(harvest_path))
-    LOGGER.info('Processing session {}'.format(session_id))
-    for path in glob(join(harvest_path, '*', '[0-9]*.tar')):
-        stage(session_id, path, clean)
+def scan(harvests_path, session_id, clean = False, watch = False):
+    harvests_path = join(harvests_path, session_id)
+    if not isdir(harvests_path): raise IOError('{} is not a directory'.format(harvests_path))
+    seen = set()
+    try:
+        while True:
+            LOGGER.info('Processing session {}'.format(session_id))
+            for path in glob(join(harvests_path, '*', '[0-9]*.tar')):
+                if not path in seen:
+                    stage(session_id, path, clean)
+                    seen.add(path)
+                else:
+                    LOGGER.info('Already seen {}'.format(path))
+            if not watch: break
+            sleep(10)
+    except KeyboardInterrupt:
+        Store.LOGGER.info('Got KeyboardInterrupt, stopped watching')
 
 
 def stage(session_id, path, clean = False):
     m = UID_TIMESTAMP_RE.match(path)
-    if not m: return
+    if not m:
+        LOGGER.info('Ignoring {} (seems not to be an harvest)'.format(path))
+        return
     gd = m.groupdict()
     with open(path, 'rb') as t: tar_data = t.read()
     Store.jobs_enqueue(session_id, gd['uid'], gd['timestamp'], tar_data, clean)
@@ -104,10 +123,10 @@ def add(session_id, tar_data, uid, timestamp, clean = False):
         store.compilations_add(exercise_name, compiler_message)
 
         if compiler_message:
-            summary.append({'name': exercise_name, 'compile': False})
+            summary[exercise_name] = {'compile': False}
             continue
         Store.LOGGER.info( 'Compiled solution for exercise {}'.format(exercise_name))
-        cases = store.cases_get(exercise_name)
+        
         n = cases.fill_actual(solution)
         Store.LOGGER.info( 'Run {} test cases for {}'.format(n, exercise_name))
         store.results_add(exercise_name, cases)
