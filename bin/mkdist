@@ -44,14 +44,6 @@ chmod u+rx $(pwd)/release/st
 
 rm -rf $tempdir
 
-if [ ! -z $1 ]; then
+echocol "Built version is"
 
-echocol "Building rewebdis docker image"
-
-(cd ./docker/rewebdis; ./build.sh)
-
-echocol "Building testrunner docker image"
-
-(cd ./docker/testrunner; ./build.sh)
-
-fi
+./release/st version

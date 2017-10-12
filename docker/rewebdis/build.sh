@@ -8,6 +8,3 @@ export COMMIT=$(git rev-parse HEAD | cut -b -8)
 docker build -t $REPO:$COMMIT .
 docker tag $REPO:$COMMIT $REPO:$TAG
 docker tag $REPO:$COMMIT $REPO:$VERSION
-if [ ! -z $1 ]; then
-    docker push $REPO
-fi

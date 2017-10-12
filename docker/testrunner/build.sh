@@ -21,11 +21,8 @@ fi
 docker build -t $REPO:$COMMIT .
 docker tag $REPO:$COMMIT $REPO:$TAG
 docker tag $REPO:$COMMIT $REPO:$VERSION
-if [ ! -z $1 ]; then
-    docker push $REPO
-fi
 
 rm -f sf st wait-for
 
-echo "st tool: $(docker run -t --rm scythe/testrunner version)"
+echo "st tool: $(docker run -t --rm --entrypoint st scythe/testrunner version)"
 echo "sf tool: $(docker run -t --rm --entrypoint sf scythe/testrunner version)"
