@@ -13,7 +13,7 @@ def main():
     try:
         subcommand = sys.argv.pop(1)
     except IndexError:
-        sys.stderr.write('Available subcommsands: {}\n'.format(', '.join(COMMANDS)))
+        sys.stderr.write('Available subcommands: {}\n'.format(', '.join(COMMANDS)))
         sys.exit(1)
     if subcommand == 'version':
         sys.stderr.write('Version: {}\n'.format(VERSION))
