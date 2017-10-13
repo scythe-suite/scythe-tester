@@ -46,7 +46,7 @@ class RedisHandler(Handler):
 
 class Store(object):
 
-    REDIS = StrictRedis.from_url(environ.get('SCYTHE_REDIS_URL', 'redis://localhost'))
+    REDIS = StrictRedis.from_url('redis://{}'.format(environ.get('SCYTHE_REDIS_HOST', 'localhost')))
     JOBS_KEY = 'jobs'
     LOGGER = getLogger('STORE_LOGGER')
     LOGGER.setLevel(INFO)

@@ -6,5 +6,4 @@ COPY st /bin
 COPY wait-for /bin
 RUN chmod a+rx /bin/sf /bin/st /bin/wait-for
 ENV PYTHONPATH=/bin/sf:/bin/st
-ENTRYPOINT [ "/bin/wait-for", "scythe-rewebdis:6379", "--", "/bin/st" ]
-CMD [ "process", "-c", "-w", "8" ]
+CMD [ "sh", "-c", "/bin/wait-for $SCYTHE_REDIS_HOST:6379 -- /bin/st process -c -w 8" ]

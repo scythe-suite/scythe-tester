@@ -24,5 +24,5 @@ docker tag $REPO:$COMMIT $REPO:$VERSION
 
 rm -f sf st wait-for
 
-echo "st tool: $(docker run -t --rm --entrypoint st scythe/testrunner version)"
-echo "sf tool: $(docker run -t --rm --entrypoint sf scythe/testrunner version)"
+echo "st tool: $(docker run -t --rm scythe/testrunner st version)"
+echo "sf tool: $(docker run -t --rm scythe/testrunner sf version)"
