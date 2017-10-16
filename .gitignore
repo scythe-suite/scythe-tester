@@ -1,3 +1,4 @@
 /vendor
 /release
 docker/testrunner/build-dev.sh
+*.pyc

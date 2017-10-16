@@ -20,10 +20,6 @@ def add(path, session_id, clean = False):
 
     store = Store(session_id)
 
-    uids_key = 'uids:{}'.format(session_id)
-    cases_key = 'cases:{}'.format(session_id)
-    texts_key = 'texts:{}'.format(session_id)
-
     if clean:
         LOGGER.info('Cleaning session {} configuration'.format(session_id))
         store.uids_clean()
@@ -56,4 +52,5 @@ def add(path, session_id, clean = False):
             n = store.texts_add(exercise_name, list_of_texts)
             LOGGER.info('Imported {} text(s) for exercise {}'.format(n, exercise_name))
 
+    store.secrets_add(config['SECRET_KEY'])
     rmrotree(temp_dir)

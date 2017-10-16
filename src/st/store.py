@@ -52,12 +52,13 @@ class Store(object):
     LOGGER.setLevel(INFO)
     LOGGER.addHandler(RedisHandler(REDIS))
 
-    def __init__(self, session_id):
+    def __init__(self, session_id = ''):
         self.session_id = session_id
         self.uids_key = 'uids:{}'.format(session_id)
         self.cases_key = 'cases:{}'.format(session_id)
         self.texts_key = 'texts:{}'.format(session_id)
         self.summaries_key = 'summaries:{}'.format(session_id)
+        self.secrets_key = 'secrets:{}'.format(session_id)
 
     @staticmethod
     def getlogentry(follow):
@@ -145,6 +146,10 @@ class Store(object):
         Store.REDIS.hset(self.texts_key, exercise_name, dumps(list_of_texts))
         return len(list_of_texts)
 
+    def texts_getall(self):
+        texts = Store.REDIS.hgetall(self.texts_key)
+        return dict((name, loads(texts_list)) for name, texts_list in texts.items())
+
     def timestamps_clean(self):
         Store.REDIS.zrem(self.timestamps_key, self.timestamp)
 
@@ -161,6 +166,13 @@ class Store(object):
         Store.REDIS.hset(self.solutions_key, exercise_name, dumps(list_of_solutions))
         return len(list_of_solutions)
 
+    def solutions_get(self, exercise_name):
+        solutions = Store.REDIS.hget(self.solutions_key, exercise_name)
+        if solutions:
+            return loads(solutions)
+        else:
+            return {}
+
     def solutions_getall(self):
         solutions = Store.REDIS.hgetall(self.solutions_key)
         return dict((name, loads(solutions_list)) for name, solutions_list in solutions.items())
@@ -170,6 +182,13 @@ class Store(object):
 
     def compilations_add(self, exercise_name, compiler_message):
         return Store.REDIS.hset(self.compilations_key, exercise_name, compiler_message)
+
+    def compilations_get(self, exercise_name):
+        compilations = Store.REDIS.hget(self.compilations_key, exercise_name)
+        if compilations:
+            return loads(compilations)
+        else:
+            return {}
 
     def compilations_getall(self):
         return Store.REDIS.hgetall(self.compilations_key)
@@ -182,6 +201,13 @@ class Store(object):
         Store.REDIS.hset(self.results_key, exercise_name, dumps(list_of_results))
         return len(list_of_results)
 
+    def results_get(self, exercise_name):
+        results = Store.REDIS.hget(self.results_key, exercise_name)
+        if results:
+            return loads(results)
+        else:
+            return {}
+
     def results_getall(self):
         results = Store.REDIS.hgetall(self.results_key)
         return dict((name, TestCases.from_list_of_dicts(loads(results_list))) for name, results_list in results.items())
@@ -189,8 +215,24 @@ class Store(object):
     def cases_clean(self):
         Store.REDIS.delete(self.summaries_key)
 
-    def summary_clean(self):
+    def summaries_clean(self):
         Store.REDIS.hdel(self.summaries_key, self.uid)
 
-    def summary_add(self, summary):
+    def summaries_add(self, summary):
         Store.REDIS.hset(self.summaries_key, self.uid, dumps({'timestamp': self.timestamp, 'summary': summary}))
+
+    def summaries_getall(self):
+        summaries = Store.REDIS.hgetall(self.summaries_key)
+        return dict((uid, loads(summary_list)) for uid, summary_list in summaries.items())
+
+    def secrets_clean(self):
+        Store.REDIS.hdel(self.secrets_key, self.session_id)
+
+    def secrets_add(self, secret):
+        Store.REDIS.hset(self.secrets_key, self.session_id, secret)
+
+    def secrets_isvalid(self, secret):
+        return secret == Store.REDIS.hget(self.secrets_key, self.session_id, secret)
+
+    def secrets_sessions(self):
+        return Sotre.REDIS.hkeys(self.secrets_key, self.session_id)

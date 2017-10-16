@@ -39,7 +39,6 @@ def process(num_workers = 1):
 
 
 def scan(harvests_path, session_id, clean = False, watch = False):
-    harvests_path = join(harvests_path, session_id)
     if not isdir(harvests_path): raise IOError('{} is not a directory'.format(harvests_path))
     seen = set()
     try:
@@ -83,7 +82,7 @@ def add(session_id, tar_data, uid, timestamp, clean = False):
         store.solutions_clean()
         store.compilations_clean()
         store.results_clean()
-        store.summary_clean()
+        store.summaries_clean()
 
     temp_dir = tar2tmpdir(tar_data)
     Store.LOGGER.info('Processing upload by uid {} at {} (in {})'.format(uid, ts2iso(timestamp), temp_dir))
@@ -136,6 +135,6 @@ def add(session_id, tar_data, uid, timestamp, clean = False):
         oks = n - errors - diffs
         summary[exercise_name] = {'compile': True, 'errors': errors, 'diffs': diffs, 'oks': oks}
 
-    store.summary_add(summary)
+    store.summaries_add(summary)
     rmrotree(temp_dir)
     store.timestamps_add()

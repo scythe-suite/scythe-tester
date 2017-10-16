@@ -29,4 +29,4 @@ def main():
             oks = n - errors - diffs
             summary[exercise] = {'compile': True, 'errors': errors, 'diffs': diffs, 'oks': oks}
 
-        store.summary_add(summary)
+        store.summaries_add(summary)
