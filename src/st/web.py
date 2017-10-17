@@ -56,13 +56,13 @@ class Compilations(Resource):
     def get(self, uid, timestamp, exercise):
         s = Store()
         s.set_harvest(uid, timestamp)
-        return {'solutions': s.solutions_get(exercise)}
+        return {'compilations': s.compilations_get(exercise)}
 
 class Results(Resource):
     def get(self, uid, timestamp, exercise):
         s = Store()
         s.set_harvest(uid, timestamp)
-        return {'solutions': s.solutions_get(exercise)}
+        return {'results': s.results_get(exercise)}
 
 api.add_resource(Uids, '/uids/<string:session_id>')
 api.add_resource(Summaries, '/summaries/<string:session_id>')
