@@ -171,7 +171,7 @@ class Store(object):
         if solutions:
             return loads(solutions)
         else:
-            return {}
+            return []
 
     def solutions_getall(self):
         solutions = Store.REDIS.hgetall(self.solutions_key)
@@ -184,11 +184,7 @@ class Store(object):
         return Store.REDIS.hset(self.compilations_key, exercise_name, compiler_message)
 
     def compilations_get(self, exercise_name):
-        compilations = Store.REDIS.hget(self.compilations_key, exercise_name)
-        if compilations:
-            return loads(compilations)
-        else:
-            return {}
+        return Store.REDIS.hget(self.compilations_key, exercise_name)
 
     def compilations_getall(self):
         return Store.REDIS.hgetall(self.compilations_key)
@@ -206,14 +202,14 @@ class Store(object):
         if results:
             return loads(results)
         else:
-            return {}
+            return []
 
     def results_getall(self):
         results = Store.REDIS.hgetall(self.results_key)
         return dict((name, TestCases.from_list_of_dicts(loads(results_list))) for name, results_list in results.items())
 
     def cases_clean(self):
-        Store.REDIS.delete(self.summaries_key)
+        Store.REDIS.delete(self.cases_key)
 
     def summaries_clean(self):
         Store.REDIS.hdel(self.summaries_key, self.uid)
