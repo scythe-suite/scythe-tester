@@ -22,7 +22,7 @@ def main():
         for exercise, n in exercises.items():
             if exercise not in compilations: continue
             if compilations[exercise]:
-                summary[exercise]= {'compile':  False}
+                summary[exercise]= {'compile': False}
                 continue
             errors = len([1 for case in results[exercise].values() if case.errors is not None])
             diffs = len([1 for case in results[exercise].values() if case.diffs is not None])
