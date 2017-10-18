@@ -52,5 +52,5 @@ def add(path, session_id, clean = False):
             n = store.texts_add(exercise_name, list_of_texts)
             LOGGER.info('Imported {} text(s) for exercise {}'.format(n, exercise_name))
 
-    store.secrets_add(config['SECRET_KEY'])
+    store.sessions_add(config['SECRET_KEY'])
     rmrotree(temp_dir)

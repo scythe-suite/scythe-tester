@@ -8,6 +8,6 @@ def main():
     args = parser.parse_args()
 
     while True:
-        record = Store.getlogentry(args.follow)
+        record = Store.get_logentry(args.follow)
         if not record: break
         print record

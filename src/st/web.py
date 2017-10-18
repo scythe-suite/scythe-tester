@@ -22,6 +22,10 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET')
     return response
 
+class Sessions(Resource):
+    def get(self):
+        return {'sessions': Store.get_sessions()}
+
 class Uids(Resource):
     def get(self, session_id):
         s = Store(session_id)
@@ -64,6 +68,7 @@ class Results(Resource):
         s.set_harvest(uid, timestamp)
         return {'results': s.results_get(exercise)}
 
+api.add_resource(Sessions, '/sessions')
 api.add_resource(Uids, '/uids/<string:session_id>')
 api.add_resource(Summaries, '/summaries/<string:session_id>')
 api.add_resource(Texts, '/texts/<string:session_id>')

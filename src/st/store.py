@@ -17,6 +17,8 @@ from json import loads, dumps
 from logging import Handler, Formatter, getLogger, INFO, WARN
 from os import environ
 
+from itsdangerous import URLSafeSerializer, BadSignature
+
 from redis import StrictRedis
 
 from sf.testcases import TestCases
@@ -48,6 +50,7 @@ class Store(object):
 
     REDIS = StrictRedis.from_url('redis://{}'.format(environ.get('SCYTHE_REDIS_HOST', 'localhost')))
     JOBS_KEY = 'jobs'
+    SESSIONS_KEY = 'sessions'
     LOGGER = getLogger('STORE_LOGGER')
     LOGGER.setLevel(INFO)
     LOGGER.addHandler(RedisHandler(REDIS))
@@ -58,14 +61,18 @@ class Store(object):
         self.cases_key = 'cases:{}'.format(session_id)
         self.texts_key = 'texts:{}'.format(session_id)
         self.summaries_key = 'summaries:{}'.format(session_id)
-        self.secrets_key = 'secrets:{}'.format(session_id)
 
     @staticmethod
-    def getlogentry(follow):
+    def get_logentry(follow):
         if follow:
             return Store.REDIS.blpop('log', 0)[1]
         else:
             return Store.REDIS.lpop('log')
+
+    @staticmethod
+    def get_sessions():
+        return Store.REDIS.hkeys(Store.SESSIONS_KEY)
+
     @staticmethod
     def jobs_clean():
         Store.REDIS.delete(Store.JOBS_KEY)
@@ -221,14 +228,17 @@ class Store(object):
         summaries = Store.REDIS.hgetall(self.summaries_key)
         return dict((uid, loads(summary_list)) for uid, summary_list in summaries.items())
 
-    def secrets_clean(self):
-        Store.REDIS.hdel(self.secrets_key, self.session_id)
+    def sessions_clean(self):
+        Store.REDIS.hdel(self.SESSIONS_KEY, self.session_id)
 
-    def secrets_add(self, secret):
-        Store.REDIS.hset(self.secrets_key, self.session_id, secret)
+    def sessions_add(self, secret):
+        Store.REDIS.hset(self.SESSIONS_KEY, self.session_id, secret)
 
-    def secrets_isvalid(self, secret):
-        return secret == Store.REDIS.hget(self.secrets_key, self.session_id, secret)
+    def sessions_dumps(self, dct):
+        return URLSafeSerializer(Store.REDIS.hget(self.SESSIONS_KEY, self.session_id)).dumps(dct)
 
-    def secrets_sessions(self):
-        return Sotre.REDIS.hkeys(self.secrets_key, self.session_id)
+    def sessions_loads(self, str):
+        try:
+            return URLSafeSerializer(Store.REDIS.hget(self.SESSIONS_KEY, self.session_id)).loads(str)
+        except BadSignature:
+            return {}
