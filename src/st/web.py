@@ -1,7 +1,7 @@
 from logging import StreamHandler, Formatter, INFO
 
-from flask import Flask
-from flask_restful import Resource, Api
+from flask import Flask, request
+from flask_restful import Resource, Api, abort
 
 from st.store import Store
 
@@ -15,12 +15,21 @@ app.logger.addHandler(sh)
 app.logger.setLevel(INFO)
 app.logger.info('Started redis rest server...')
 
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET')
-    return response
+# @app.after_request
+# def after_request(response):
+#     response.headers.add('Access-Control-Allow-Origin', '*')
+#     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+#     response.headers.add('Access-Control-Allow-Methods', 'GET')
+#     return response
+
+def check_auth(store, realm):
+    try:
+        auth = request.args['auth']
+    except KeyError:
+        abort(401)
+    realms = store.sessions_loads(auth)
+    if ('all' in realms) or (realm in realms): return
+    abort(401)
 
 class Sessions(Resource):
     def get(self):
@@ -31,6 +40,11 @@ class Uids(Resource):
         s = Store(session_id)
         return {'uids': s.uids_getall()}
 
+class Exercises(Resource):
+    def get(self, session_id):
+        s = Store(session_id)
+        return {'exercises': s.texts_exercises()}
+
 class Summaries(Resource):
     def get(self, session_id):
         s = Store(session_id)
@@ -39,11 +53,13 @@ class Summaries(Resource):
 class Texts(Resource):
     def get(self, session_id):
         s = Store(session_id)
+        check_auth(s, 'texts')
         return {'texts': s.texts_getall()}
 
 class Cases(Resource):
     def get(self, session_id):
         s = Store(session_id)
+        check_auth(s, 'cases')
         return {'cases':
             dict(
                 (name, cases.to_list_of_dicts(('diffs', 'errors', 'actual')))
@@ -51,28 +67,32 @@ class Cases(Resource):
             )}
 
 class Solutions(Resource):
-    def get(self, uid, timestamp, exercise):
-        s = Store()
+    def get(self, session_id, uid, timestamp, exercise):
+        s = Store(session_id)
+        check_auth(s, 'solutions')
         s.set_harvest(uid, timestamp)
         return {'solutions': s.solutions_get(exercise)}
 
 class Compilations(Resource):
-    def get(self, uid, timestamp, exercise):
-        s = Store()
+    def get(self, session_id, uid, timestamp, exercise):
+        s = Store(session_id)
+        check_auth(s, 'compilations')
         s.set_harvest(uid, timestamp)
         return {'compilations': s.compilations_get(exercise)}
 
 class Results(Resource):
-    def get(self, uid, timestamp, exercise):
-        s = Store()
+    def get(self, session_id, uid, timestamp, exercise):
+        s = Store(session_id)
+        check_auth(s, 'results')
         s.set_harvest(uid, timestamp)
         return {'results': s.results_get(exercise)}
 
 api.add_resource(Sessions, '/sessions')
 api.add_resource(Uids, '/uids/<string:session_id>')
+api.add_resource(Exercises, '/exercises/<string:session_id>')
 api.add_resource(Summaries, '/summaries/<string:session_id>')
 api.add_resource(Texts, '/texts/<string:session_id>')
 api.add_resource(Cases, '/cases/<string:session_id>')
-api.add_resource(Solutions, '/solutions/<string:uid>/<string:timestamp>/<string:exercise>')
-api.add_resource(Compilations, '/compilations/<string:uid>/<string:timestamp>/<string:exercise>')
-api.add_resource(Results, '/results/<string:uid>/<string:timestamp>/<string:exercise>')
+api.add_resource(Solutions, '/solutions/<string:session_id>/<string:uid>/<string:timestamp>/<string:exercise>')
+api.add_resource(Compilations, '/compilations/<string:session_id>/<string:uid>/<string:timestamp>/<string:exercise>')
+api.add_resource(Results, '/results/<string:session_id>/<string:uid>/<string:timestamp>/<string:exercise>')

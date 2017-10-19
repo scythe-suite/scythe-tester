@@ -157,6 +157,13 @@ class Store(object):
         texts = Store.REDIS.hgetall(self.texts_key)
         return dict((name, loads(texts_list)) for name, texts_list in texts.items())
 
+    def texts_exercises(self):
+        res = {}
+        cases = Store.REDIS.hgetall(self.cases_key)
+        for name in Store.REDIS.hkeys(self.texts_key):
+            res[name] = len(loads(cases[name])) if name in cases else 0
+        return res
+
     def timestamps_clean(self):
         Store.REDIS.zrem(self.timestamps_key, self.timestamp)
 
