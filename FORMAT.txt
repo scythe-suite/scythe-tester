@@ -9,3 +9,5 @@ HASH	results:<UID>:<TIMESTAMP> -> <EXERCISE_NAME>: JSON([{name: <CASE_NAME>, dif
 HASH	compilations:<UID>:<TIMESTAMP> -> <EXERCISE_NAME>: <COMPILER_OUTPUT>
 
 HASH	summaries:<SESSION_ID> -> <UID>: JSON({timetsamp: <TIMESTAMP>, summary: <EXERCISE_NAME>: {compile: <BOOLEAN>, diffs: <NUM_DIFFS>, errors: <NUM_ERRORS>, oks: <NUM_OK>}})
+
+HASH    sessions -> <SESSION_ID>: <SECRET>
