@@ -1,12 +1,15 @@
 from logging import StreamHandler, Formatter, INFO
+from os import environ
 
 from flask import Flask, request
 from flask_restful import Resource, Api, abort
+from flask_socketio import SocketIO, emit
 
 from st.store import Store
 
 app = Flask(__name__)
 api = Api(app)
+socketio = SocketIO(app, async_mode = 'eventlet')
 
 sh = StreamHandler()
 sh.setLevel(INFO)
@@ -30,6 +33,19 @@ def check_auth(store, realm):
     realms = store.sessions_loads(auth)
     if ('all' in realms) or (realm in realms): return
     abort(401)
+
+def pubsub_forwarder():
+    import redis
+    app.logger.info('Started pub/sub forwarder')
+    r = redis.StrictRedis.from_url('redis://{}'.format(environ.get('SCYTHE_REDIS_HOST', 'localhost')))
+    p = r.pubsub()
+    p.subscribe('results')
+    while True:
+        message = p.get_message()
+        if message:
+            socketio.emit('new_result', {'data': message})
+            app.logger.info('Forwarded a new result to websocket')
+        socketio.sleep(1)
 
 class Sessions(Resource):
     def get(self):
@@ -96,3 +112,11 @@ api.add_resource(Cases, '/cases/<string:session_id>')
 api.add_resource(Solutions, '/solutions/<string:session_id>/<string:uid>/<string:timestamp>/<string:exercise>')
 api.add_resource(Compilations, '/compilations/<string:session_id>/<string:uid>/<string:timestamp>/<string:exercise>')
 api.add_resource(Results, '/results/<string:session_id>/<string:uid>/<string:timestamp>/<string:exercise>')
+
+@socketio.on('connect')
+def client_connect():
+    app.logger.info('Client connected')
+
+@socketio.on('disconnect')
+def client_disconnect():
+    app.logger.info('Client disconnected')

@@ -5,7 +5,7 @@ from traceback import format_exception_only
 
 from st import VERSION
 
-COMMANDS = 'configure', 'stage', 'process', 'logs', 'summary', 'web', 'auth'
+COMMANDS = 'configure', 'stage', 'process', 'logs', 'summary', 'rest', 'auth'
 
 def main():
     if 'ST_DEBUG' not in environ:

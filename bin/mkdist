@@ -50,6 +50,25 @@ if [ ! -d ./vendor/flask_restful ]; then
 	echocol "Getting flask_restful"
     curl -sL https://github.com/flask-restful/flask-restful/tarball/0.3.6 | tar -C ./vendor --strip 1 --wildcards -zxvf - '*/flask_restful'
 fi
+if [ ! -d ./vendor/socketio ]; then
+	echocol "Getting python-socketio"
+    curl -sL https://github.com/miguelgrinberg/python-socketio/tarball/v1.8.1 | tar -C ./vendor --strip 1 --wildcards -zxvf - '*/socketio'
+fi
+if [ ! -d ./vendor/flask_socketio ]; then
+	echocol "Getting Flask-SocketIO"
+    curl -sL https://github.com/miguelgrinberg/Flask-SocketIO/tarball/v2.9.2 | tar -C ./vendor --strip 1 --wildcards -zxvf - '*/flask_socketio'
+fi
+if [ ! -d ./vendor/engineio ]; then
+	echocol "Getting Python-Engine.IO"
+    curl -sL https://github.com/miguelgrinberg/python-engineio/tarball/v1.7.0 | tar -C ./vendor --strip 1 --wildcards -zxvf - '*/engineio'
+fi
+if [ ! -r ./vendor/six.py ]; then
+	echocol "Getting six"
+    curl -sL https://github.com/benjaminp/six/tarball/1.11.0 | tar -C ./vendor --strip 1 --wildcards -zxvf - '*/six.py'
+fi
+
+
+
 echocol "Vendorizing [end]"
 
 echocol "Copying source files to dist"
@@ -59,7 +78,7 @@ cp -rv ./vendor/* $tempdir/dist
 
 echocol "Compiling and removing source files"
 
-( cd $tempdir/dist; python -m compileall . )
+( cd $tempdir/dist; python -m compileall .  || true)
 find $tempdir/dist -name \*.py -exec rm {} \;
 
 echocol "Preparing zip file"
