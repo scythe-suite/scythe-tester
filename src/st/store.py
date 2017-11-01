@@ -215,7 +215,17 @@ class Store(object):
         Store.REDIS.hdel(self.summaries_key, self.uid)
 
     def summaries_add(self, summary):
-        Store.REDIS.hset(self.summaries_key, self.uid, dumps({'timestamp': self.timestamp, 'summary': summary}))
+        Store.REDIS.hset(self.summaries_key, self.uid, dumps({
+            'timestamp': self.timestamp,
+            'summary': summary
+        }))
+        Store.REDIS.publish('summaries_channel',
+        dumps({
+            'session_id': self.session_id,
+            'uid': self.uid,
+            'timestamp': self.timestamp,
+            'summary': summary
+        }))
 
     def summaries_getall(self):
         summaries = Store.REDIS.hgetall(self.summaries_key)

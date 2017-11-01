@@ -39,11 +39,11 @@ def pubsub_forwarder():
     app.logger.info('Started pub/sub forwarder')
     r = redis.StrictRedis.from_url('redis://{}'.format(environ.get('SCYTHE_REDIS_HOST', 'localhost')))
     p = r.pubsub()
-    p.subscribe('results')
+    p.subscribe('summaries_channel')
     while True:
         message = p.get_message()
         if message:
-            socketio.emit('new_result', {'data': message})
+            socketio.emit('summary_message', {'data': message})
             app.logger.info('Forwarded a new result to websocket')
         socketio.sleep(1)
 
