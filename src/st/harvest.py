@@ -44,7 +44,7 @@ def scan(harvests_path, session_id, clean = False, watch = False):
     try:
         while True:
             LOGGER.info('Processing session {}'.format(session_id))
-            for path in glob(join(harvests_path, '*', '[0-9]*.tar')):
+            for path in sorted(glob(join(harvests_path, '*', '[0-9]*.tar')), key = lambda _: _.split('/')[-1]):
                 if not path in seen:
                     stage(session_id, path, clean)
                     seen.add(path)

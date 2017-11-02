@@ -2,7 +2,7 @@
 
 echocol() { echo -e "\033[31m$@...\033[0m " >&2; }
 
-if [ -z "$2" ]; then
+if [ -z "$1" ]; then
     exec >/dev/null
 fi
 
@@ -67,8 +67,6 @@ if [ ! -r ./vendor/six.py ]; then
     curl -sL https://github.com/benjaminp/six/tarball/1.11.0 | tar -C ./vendor --strip 1 --wildcards -zxvf - '*/six.py'
 fi
 
-
-
 echocol "Vendorizing [end]"
 
 echocol "Copying source files to dist"
@@ -76,9 +74,13 @@ echocol "Copying source files to dist"
 cp -rv ./src/{st,__main__.py} $tempdir/dist
 cp -rv ./vendor/* $tempdir/dist
 
+echocol "Getting rid of 'async def'"
+
+( cd $tempdir/dist; rm -f $(grep -l 'async def' socketio/*.py engineio/*.py) )
+
 echocol "Compiling and removing source files"
 
-( cd $tempdir/dist; python -m compileall .  || true)
+( cd $tempdir/dist; python -m compileall . )
 find $tempdir/dist -name \*.py -exec rm {} \;
 
 echocol "Preparing zip file"
