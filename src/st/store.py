@@ -2,10 +2,11 @@ from base64 import decodestring, encodestring
 from json import loads, dumps
 from logging import Handler, Formatter, getLogger, INFO, WARN
 from os import environ
+from time import time, sleep
 
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from redis import StrictRedis
+from redis import StrictRedis, BusyLoadingError
 
 from sf.testcases import TestCases
 
@@ -32,9 +33,22 @@ class RedisHandler(Handler):
             pass
 
 
+def _connect():
+    client = StrictRedis.from_url('redis://{}'.format(environ.get('SCYTHE_REDIS_HOST', 'localhost')))
+    start_time = time()
+    while time() - start_time < 10: # wait at most 10s
+        try:
+            client.get(None)
+        except BusyLoadingError:
+            sleep(0.1)
+        else:
+            break
+    return client
+
+
 class Store(object):
 
-    REDIS = StrictRedis.from_url('redis://{}'.format(environ.get('SCYTHE_REDIS_HOST', 'localhost')))
+    REDIS = _connect()
     JOBS_KEY = 'jobs'
     SESSIONS_KEY = 'sessions'
     LOGGER = getLogger('STORE_LOGGER')

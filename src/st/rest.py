@@ -1,3 +1,4 @@
+from json import loads
 from logging import StreamHandler, Formatter, INFO
 from os import environ
 
@@ -6,6 +7,8 @@ from flask_restful import Resource, Api, abort
 from flask_socketio import SocketIO, emit
 
 from st.store import Store
+
+PUBSUB_SLEEP_SECONDS = 5
 
 app = Flask(__name__)
 api = Api(app)
@@ -41,11 +44,13 @@ def pubsub_forwarder():
     p = r.pubsub()
     p.subscribe('summaries_channel')
     while True:
+        socketio.emit('load_message', {'load': Store.jobs_num()})
         message = p.get_message()
-        if message:
-            socketio.emit('summary_message', {'data': message})
+        if message and message['type'] == 'message' and message['channel'] == 'summaries_channel':
+            socketio.emit('summary_message', {'summary': loads(message['data'])})
             app.logger.info('Forwarded a new result to websocket')
-        socketio.sleep(1)
+            continue
+        socketio.sleep(PUBSUB_SLEEP_SECONDS)
 
 class Sessions(Resource):
     def get(self):
