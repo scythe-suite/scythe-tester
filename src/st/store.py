@@ -55,7 +55,7 @@ class Store(object):
     LOGGER.setLevel(INFO)
     LOGGER.addHandler(RedisHandler(REDIS))
 
-    def __init__(self, session_id = ''):
+    def __init__(self, session_id):
         self.session_id = session_id
         self.uids_key = 'uids:{}'.format(session_id)
         self.cases_key = 'cases:{}'.format(session_id)
@@ -74,12 +74,12 @@ class Store(object):
         return Store.REDIS.hkeys(Store.SESSIONS_KEY)
 
     @staticmethod
-    def jobs_clean():
+    def jobs_nuke():
         Store.REDIS.delete(Store.JOBS_KEY)
 
     @staticmethod
-    def jobs_enqueue(session_id, uid, timestamp, tar_data, clean = False):
-        job = {'tar_data': encodestring(tar_data), 'session_id': session_id, 'uid': uid, 'timestamp': timestamp, 'clean': clean}
+    def jobs_enqueue(session_id, uid, timestamp, tar_data):
+        job = {'tar_data': encodestring(tar_data), 'session_id': session_id, 'uid': uid, 'timestamp': timestamp}
         Store.REDIS.rpush(Store.JOBS_KEY, dumps(job))
 
     @staticmethod
@@ -110,8 +110,23 @@ class Store(object):
         self.results_key = 'results:{}:{}'.format(uid, timestamp)
         return timestamp
 
-    def uids_clean(self):
+    def nuke(self):
+        for uid in self.uids_getall():
+            uid = uid['uid']
+            timestamps_key = 'timestamps:{}:{}'.format(self.session_id, uid)
+            timestamps = Store.REDIS.zrange(timestamps_key, 0, -1)
+            Store.REDIS.delete(timestamps_key)
+            for timestamp in timestamps:
+                Store.LOGGER.info('Nuking session {}, uid {}, timestamp {} data'.format(self.session_id, uid, timestamp))
+                Store.REDIS.delete('solutions:{}:{}'.format(uid, timestamp))
+                Store.REDIS.delete('results:{}:{}'.format(uid, timestamp))
+                Store.REDIS.delete('compilations:{}:{}'.format(uid, timestamp))
+        Store.REDIS.delete('summaries:{}'.format(self.session_id))
+        Store.LOGGER.info('Nuking session {} configurations'.format(self.session_id))
         Store.REDIS.delete(self.uids_key)
+        Store.REDIS.delete(self.cases_key)
+        Store.REDIS.delete(self.texts_key)
+        Store.REDIS.hdel(self.SESSIONS_KEY, self.session_id)
 
     def uids_addall(self, uids_infos, status = 'registered'):
         n = 0
@@ -126,9 +141,6 @@ class Store(object):
             return list(map(loads, juids))
         else:
             return []
-
-    def cases_clean(self):
-        Store.REDIS.delete(self.cases_key)
 
     def cases_add(self, exercise_name, cases):
         list_of_cases = cases.to_list_of_dicts(('diffs', 'errors', 'actual'))
@@ -146,9 +158,6 @@ class Store(object):
         cases = Store.REDIS.hgetall(self.cases_key)
         return dict((name, TestCases.from_list_of_dicts(loads(cases_list))) for name, cases_list in cases.items())
 
-    def texts_clean(self):
-        Store.REDIS.delete(self.texts_key)
-
     def texts_add(self, exercise_name, list_of_texts):
         Store.REDIS.hset(self.texts_key, exercise_name, dumps(list_of_texts))
         return len(list_of_texts)
@@ -164,17 +173,11 @@ class Store(object):
             res[name] = len(loads(cases[name])) if name in cases else 0
         return res
 
-    def timestamps_clean(self):
-        Store.REDIS.zrem(self.timestamps_key, self.timestamp)
-
     def timestamps_contained(self):
         return Store.REDIS.zscore(self.timestamps_key, self.timestamp) is not None
 
     def timestamps_add(self):
         return Store.REDIS.zadd(self.timestamps_key, float(self.timestamp), self.timestamp)
-
-    def solutions_clean(self):
-        Store.REDIS.delete(self.solutions_key)
 
     def solutions_add(self, exercise_name, list_of_solutions):
         Store.REDIS.hset(self.solutions_key, exercise_name, dumps(list_of_solutions))
@@ -191,9 +194,6 @@ class Store(object):
         solutions = Store.REDIS.hgetall(self.solutions_key)
         return dict((name, loads(solutions_list)) for name, solutions_list in solutions.items())
 
-    def compilations_clean(self):
-        Store.REDIS.delete(self.compilations_key)
-
     def compilations_add(self, exercise_name, compiler_message):
         return Store.REDIS.hset(self.compilations_key, exercise_name, compiler_message)
 
@@ -202,9 +202,6 @@ class Store(object):
 
     def compilations_getall(self):
         return Store.REDIS.hgetall(self.compilations_key)
-
-    def results_clean(self):
-        Store.REDIS.delete(self.results_key)
 
     def results_add(self, exercise_name, results):
         list_of_results = results.to_list_of_dicts(('input', 'args', 'expected'))
@@ -222,12 +219,6 @@ class Store(object):
         results = Store.REDIS.hgetall(self.results_key)
         return dict((name, TestCases.from_list_of_dicts(loads(results_list))) for name, results_list in results.items())
 
-    def cases_clean(self):
-        Store.REDIS.delete(self.cases_key)
-
-    def summaries_clean(self):
-        Store.REDIS.hdel(self.summaries_key, self.uid)
-
     def summaries_add(self, summary):
         Store.REDIS.hset(self.summaries_key, self.uid, dumps({
             'timestamp': self.timestamp,
@@ -244,9 +235,6 @@ class Store(object):
     def summaries_getall(self):
         summaries = Store.REDIS.hgetall(self.summaries_key)
         return dict((uid, loads(summary_list)) for uid, summary_list in summaries.items())
-
-    def sessions_clean(self):
-        Store.REDIS.hdel(self.SESSIONS_KEY, self.session_id)
 
     def sessions_add(self, secret):
         Store.REDIS.hset(self.SESSIONS_KEY, self.session_id, secret)

@@ -12,19 +12,13 @@ from st.store import Store
 
 TEXTS_GLOB = '*.md'
 
-def add(path, session_id, clean = False):
+def add(path, session_id):
 
     config = {}
     with open(path, 'r') as f: exec(f, config)
     LOGGER.info('Read session {} configuration'.format(session_id))
 
     store = Store(session_id)
-
-    if clean:
-        LOGGER.info('Cleaning session {} configuration'.format(session_id))
-        store.uids_clean()
-        store.cases_clean()
-        store.texts_clean()
 
     n = store.uids_addall(config['REGISTERED_UIDS'].items())
     LOGGER.info('Imported {} uid(s)'.format(n))

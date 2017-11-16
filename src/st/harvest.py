@@ -11,9 +11,9 @@ from sf.solution import autodetect_solution
 from st import tar2tmpdir, rmrotree, ts2iso, LOGGER
 from st.store import Store
 
-UID_TIMESTAMP_RE = re.compile( r'.*/(?P<uid>.+)/(?P<timestamp>[0-9]+)\.tar' )
+UID_TIMESTAMP_RE = re.compile(r'.*/(?P<uid>.+)/(?P<timestamp>[0-9]+)\.tar')
 
-def process(num_workers = 1):
+def process(num_workers = 1, nuke = False):
 
     def worker():
         Store.LOGGER.info('Worker started')
@@ -25,6 +25,10 @@ def process(num_workers = 1):
             except Exception as e:
                 Store.LOGGER.critical('Got an unexpected error: "{}" while processing {}/{}@{}'.format(e, job['session_id'], job['uid'], job['timestamp']) )
             Store.LOGGER.info('Done {}/{}@{}'.format(job['session_id'], job['uid'], job['timestamp']) )
+
+    if nuke:
+        Store.jobs_nuke()
+        Store.LOGGER.info('Nuked old jobs')
 
     processes = [Process(target = worker) for _ in range(num_workers)]
     for p in processes: p.start()
@@ -38,7 +42,7 @@ def process(num_workers = 1):
         Store.LOGGER.info('All workers threads have been joined')
 
 
-def scan(harvests_path, session_id, clean = False, watch = False):
+def scan(harvests_path, session_id, watch = False):
     if not isdir(harvests_path): raise IOError('{} is not a directory'.format(harvests_path))
     seen = set()
     try:
@@ -46,7 +50,7 @@ def scan(harvests_path, session_id, clean = False, watch = False):
             LOGGER.info('Processing session {}'.format(session_id))
             for path in sorted(glob(join(harvests_path, '*', '[0-9]*.tar')), key = lambda _: _.split('/')[-1]):
                 if not path in seen:
-                    stage(session_id, path, clean)
+                    stage(session_id, path)
                     seen.add(path)
                 else:
                     LOGGER.info('Already seen {}'.format(path))
@@ -56,33 +60,25 @@ def scan(harvests_path, session_id, clean = False, watch = False):
         Store.LOGGER.info('Got KeyboardInterrupt, stopped watching')
 
 
-def stage(session_id, path, clean = False):
+def stage(session_id, path):
     m = UID_TIMESTAMP_RE.match(path)
     if not m:
         LOGGER.info('Ignoring {} (seems not to be an harvest)'.format(path))
         return
     gd = m.groupdict()
     with open(path, 'rb') as t: tar_data = t.read()
-    Store.jobs_enqueue(session_id, gd['uid'], gd['timestamp'], tar_data, clean)
+    Store.jobs_enqueue(session_id, gd['uid'], gd['timestamp'], tar_data)
     LOGGER.info('Staged harvest by uid {} at {}'.format(gd['uid'], ts2iso(gd['timestamp'])))
 
 
-def add(session_id, tar_data, uid, timestamp, clean = False):
+def add(session_id, tar_data, uid, timestamp):
 
     store = Store(session_id)
     store.set_harvest(uid, timestamp)
 
-    if not clean and store.timestamps_contained():
+    if store.timestamps_contained():
         Store.LOGGER.info('Skipping upload by uid {} at {} of {}'.format(uid, ts2iso(timestamp), session_id))
         return
-
-    if clean:
-        Store.LOGGER.info('Cleaning upload by uid {} at {} of {}'.format(uid, ts2iso(timestamp), session_id))
-        store.timestamps_clean()
-        store.solutions_clean()
-        store.compilations_clean()
-        store.results_clean()
-        store.summaries_clean()
 
     temp_dir = tar2tmpdir(tar_data)
     Store.LOGGER.info('Processing upload by uid {} at {} (in {})'.format(uid, ts2iso(timestamp), temp_dir))
