@@ -32,8 +32,10 @@ def check_auth(store, realm):
     try:
         auth = request.args['auth']
     except KeyError:
-        abort(401)
+        auth = None
     realms = store.sessions_loads(auth)
+    print realms
+    if (realm == 'summaries' and 'private' not in realms): return
     if ('all' in realms) or (realm in realms): return
     abort(401)
 
@@ -69,6 +71,7 @@ class Exercises(Resource):
 class Summaries(Resource):
     def get(self, session_id):
         s = Store(session_id)
+        check_auth(s, 'summaries')
         return {'summaries': s.summaries_getall()}
 
 class Texts(Resource):

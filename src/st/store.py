@@ -239,11 +239,17 @@ class Store(object):
     def sessions_add(self, secret):
         Store.REDIS.hset(self.SESSIONS_KEY, self.session_id, secret)
 
-    def sessions_dumps(self, dct):
-        return URLSafeSerializer(Store.REDIS.hget(self.SESSIONS_KEY, self.session_id)).dumps(dct)
+    def sessions_dumps(self, lst):
+        return URLSafeSerializer(Store.REDIS.hget(self.SESSIONS_KEY, self.session_id)).dumps(lst)
 
     def sessions_loads(self, str):
-        try:
-            return URLSafeSerializer(Store.REDIS.hget(self.SESSIONS_KEY, self.session_id)).loads(str)
-        except BadSignature:
-            return {}
+        secret = Store.REDIS.hget(self.SESSIONS_KEY, self.session_id)
+        if str:
+            try:
+                realms = URLSafeSerializer(secret).loads(str)
+            except BadSignature:
+                realms = []
+        else:
+            realms = []
+        if secret.startswith('!!'): realms.append('private')
+        return realms
