@@ -2,26 +2,26 @@
 
 version=v$(grep 'VERSION\s*=' ./src/st/__init__.py | cut -d= -f2 | tr -d "' ")
 
-./bin/mkdist
+#./bin/mkdist
 
 git tag $version
 git push --tags
 
 github-release release \
     --user scythe-suite \
-    --repo scythe \
+    --repo scythe-tester \
     --tag $version \
     --name "$1" \
     --description "$2" \
 
 github-release upload \
     --user scythe-suite \
-    --repo scythe \
+    --repo scythe-tester \
     --tag $version \
     --name st \
     --file ./release/st
 
 github-release info \
     --user scythe-suite \
-    --repo scythe \
+    --repo scythe-tester \
     --tag $version
