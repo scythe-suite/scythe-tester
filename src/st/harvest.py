@@ -101,7 +101,7 @@ def add(session_id, tar_data, uid, timestamp):
         list_of_solutions = []
         for solution_name in solution.sources:
             solution_path = join(exercise_path, solution_name)
-            with io.open(solution_path, 'r', encoding = DEFAULT_ENCODING) as tf: solution_content = tf.read()
+            with io.open(solution_path, 'r', encoding = DEFAULT_ENCODING, errors = 'replace') as tf: solution_content = tf.read()
             list_of_solutions.append({'name': solution_name, 'content': solution_content})
         n = store.solutions_add(exercise_name, list_of_solutions)
         Store.LOGGER.info('Imported {} solution(s) for exercise {}'.format(n, exercise_name))
