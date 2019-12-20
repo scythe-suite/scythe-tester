@@ -117,7 +117,7 @@ class Store(object):
             timestamps = Store.REDIS.zrange(timestamps_key, 0, -1)
             Store.REDIS.delete(timestamps_key)
             for timestamp in timestamps:
-                Store.LOGGER.info('Nuking session {}, uid {}, timestamp {} data'.format(self.session_id, uid, timestamp))
+                Store.LOGGER.info('Nuking session {}, uid {}, timestamp {} data'.format(self.session_id, uid, timestamp))
                 Store.REDIS.delete('solutions:{}:{}'.format(uid, timestamp))
                 Store.REDIS.delete('results:{}:{}'.format(uid, timestamp))
                 Store.REDIS.delete('compilations:{}:{}'.format(uid, timestamp))
