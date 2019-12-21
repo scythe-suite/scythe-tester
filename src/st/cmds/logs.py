@@ -10,4 +10,4 @@ def main():
     while True:
         record = Store.get_logentry(args.follow)
         if not record: break
-        print record
+        print(record)

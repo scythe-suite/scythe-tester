@@ -34,7 +34,7 @@ def check_auth(store, realm):
     except KeyError:
         auth = None
     realms = store.sessions_loads(auth)
-    print realms
+    print(realms)
     if (realm == 'summaries' and 'private' not in realms): return
     if ('all' in realms) or (realm in realms): return
     abort(401)
@@ -42,7 +42,7 @@ def check_auth(store, realm):
 def pubsub_forwarder():
     import redis
     app.logger.info('Started pub/sub forwarder')
-    r = redis.StrictRedis.from_url('redis://{}'.format(environ.get('SCYTHE_REDIS_HOST', 'localhost')))
+    r = redis.Redis.from_url('redis://{}'.format(environ.get('SCYTHE_REDIS_HOST', 'localhost')), decode_responses = True)
     p = r.pubsub()
     p.subscribe('summaries_channel')
     while True:

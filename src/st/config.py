@@ -1,4 +1,4 @@
-from base64 import decodestring
+from base64 import decodebytes
 from glob import glob
 import io
 from json import dumps, loads
@@ -15,7 +15,7 @@ TEXTS_GLOB = '*.md'
 def add(path, session_id):
 
     config = {}
-    with open(path, 'r') as f: exec(f, config)
+    with open(path, 'r') as f: exec(f.read(), config)
     LOGGER.info('Read session {} configuration'.format(session_id))
 
     store = Store(session_id)
@@ -23,7 +23,7 @@ def add(path, session_id):
     n = store.uids_addall(config['REGISTERED_UIDS'].items())
     LOGGER.info('Imported {} uid(s)'.format(n))
 
-    temp_dir = tar2tmpdir(decodestring(config['TAR_DATA']))
+    temp_dir = tar2tmpdir(decodebytes(config['TAR_DATA'].encode('utf-8')))
 
     for exercise_path in glob(join(temp_dir, '*')):
 

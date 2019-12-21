@@ -9,4 +9,4 @@ def main():
     args = parser.parse_args()
 
     store = Store(args.session_id)
-    print store.sessions_dumps(args.realms)
+    print(store.sessions_dumps(args.realms))

@@ -6,7 +6,7 @@ from time import time, sleep
 
 from itsdangerous import URLSafeSerializer, BadSignature
 
-from redis import StrictRedis, BusyLoadingError
+from redis import Redis, BusyLoadingError
 
 from sf.testcases import TestCases
 
@@ -34,11 +34,11 @@ class RedisHandler(Handler):
 
 
 def _connect():
-    client = StrictRedis.from_url('redis://{}'.format(environ.get('SCYTHE_REDIS_HOST', 'localhost')))
+    client = Redis.from_url('redis://{}'.format(environ.get('SCYTHE_REDIS_HOST', 'localhost')), decode_responses = True)
     start_time = time()
     while time() - start_time < 10: # wait at most 10s
         try:
-            client.get(None)
+            client.get('ARE_YOU_ALIVE')
         except BusyLoadingError:
             sleep(0.1)
         else:

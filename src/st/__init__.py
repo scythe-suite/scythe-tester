@@ -12,7 +12,7 @@ LOG_LEVEL = INFO
 basicConfig(format = '%(asctime)s %(levelname)s: %(message)s', datefmt = '%Y-%m-%d %H:%M:%S', level = LOG_LEVEL)
 LOGGER = getLogger(__name__)
 
-VERSION = '0.7.1'
+VERSION = '1.0.0-alpha'
 
 TEST_UID = '000000' # see scythe/bin/scythe-prepare
 
@@ -23,8 +23,8 @@ def rmrotree(path):
     def _oe(f, p, e):
         if p == path: return
         pp = dirname(p)
-        chmod(pp, 0700)
-        chmod(p, 0700)
+        chmod(pp, 0o700)
+        chmod(p, 0o700)
         unlink(p)
     rmtree(path, onerror = _oe)
 
