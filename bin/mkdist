@@ -19,8 +19,8 @@ echocol "Vendorizing [begin]"
 
 python3 -m pip install --ignore-installed --install-option="--prefix=$tempdir/pip" flask-restful Flask-SocketIO redis 2>&1
 
-rm -rf "$tempdir/pip/lib/python3.7/site-packages/"*.egg-info
-cp -rv "$tempdir/pip/lib/python3.7/site-packages/"* "$tempdir/dist"
+rm -rf "$tempdir"/pip/lib/python3*/site-packages/*.egg-info
+cp -rv "$tempdir"/pip/lib/python3*/site-packages/* "$tempdir/dist"
 
 echocol "Vendorizing [end]"
 

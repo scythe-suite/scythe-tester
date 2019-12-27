@@ -12,7 +12,7 @@ LOG_LEVEL = INFO
 basicConfig(format = '%(asctime)s %(levelname)s: %(message)s', datefmt = '%Y-%m-%d %H:%M:%S', level = LOG_LEVEL)
 LOGGER = getLogger(__name__)
 
-VERSION = '1.0.0-alpha'
+VERSION = '1.0.0'
 
 TEST_UID = '000000' # see scythe/bin/scythe-prepare
 
