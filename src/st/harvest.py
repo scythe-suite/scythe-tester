@@ -113,7 +113,7 @@ def add(session_id, tar_data, uid, timestamp):
         else:
             compilation_result = solution.compile()
             if compilation_result.returncode:
-                compiler_message = compilation_result.stderr.decode(DEFAULT_ENCODING)
+                compiler_message = compilation_result.stderr
                 Store.LOGGER.warn( 'Failed to compile exercise {}'.format(exercise_name))
         store.compilations_add(exercise_name, compiler_message)
 

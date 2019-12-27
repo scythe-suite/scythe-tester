@@ -1,4 +1,4 @@
-from base64 import decodestring, encodestring
+from base64 import decodebytes, encodebytes
 from json import loads, dumps
 from logging import Handler, Formatter, getLogger, INFO, WARN
 from os import environ
@@ -79,7 +79,7 @@ class Store(object):
 
     @staticmethod
     def jobs_enqueue(session_id, uid, timestamp, tar_data):
-        job = {'tar_data': encodestring(tar_data), 'session_id': session_id, 'uid': uid, 'timestamp': timestamp}
+        job = {'tar_data': encodebytes(tar_data).decode('ascii'), 'session_id': session_id, 'uid': uid, 'timestamp': timestamp}
         Store.REDIS.rpush(Store.JOBS_KEY, dumps(job))
 
     @staticmethod
@@ -90,7 +90,7 @@ class Store(object):
             Store.LOGGER.info('Job dequeueing interrupted')
             return None
         job = loads(job[1])
-        job['tar_data'] = decodestring(job['tar_data'])
+        job['tar_data'] = decodebytes(job['tar_data'].encode('ascii'))
         return job
 
     @staticmethod
@@ -177,7 +177,7 @@ class Store(object):
         return Store.REDIS.zscore(self.timestamps_key, self.timestamp) is not None
 
     def timestamps_add(self):
-        return Store.REDIS.zadd(self.timestamps_key, float(self.timestamp), self.timestamp)
+        return Store.REDIS.zadd(self.timestamps_key, {self.timestamp: float(self.timestamp)})
 
     def solutions_add(self, exercise_name, list_of_solutions):
         Store.REDIS.hset(self.solutions_key, exercise_name, dumps(list_of_solutions))
