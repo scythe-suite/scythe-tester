@@ -1,5 +1,4 @@
 from glob import glob
-import io
 from multiprocessing import Process
 from os.path import join, basename, isdir
 import re
@@ -94,27 +93,28 @@ def add(session_id, tar_data, uid, timestamp):
             Store.LOGGER.warn('No cases found for exercise {}'.format(exercise_name))
             continue
 
-        solution = autodetect_solution(exercise_path)
+        solution = autodetect_solution(exercise_path, True)
         if solution.sources is None:
-            Store.LOGGER.warn('No solutions found for exercise {}'.format(exercise_name))
+            Store.LOGGER.warn('No sources found for exercise {}'.format(exercise_name))
             continue
+        if solution.main_source is None:
+            Store.LOGGER.warn('No main source for {}'.format(exercise_name))
+        if solution.run_command is None:
+            Store.LOGGER.warn('No runnable for {}'.format(exercise_name))
         list_of_solutions = []
         for solution_name in solution.sources:
             solution_path = join(exercise_path, solution_name)
-            with io.open(solution_path, 'r', encoding = DEFAULT_ENCODING, errors = 'replace') as tf: solution_content = tf.read()
+            with open(solution_path, 'r', encoding = DEFAULT_ENCODING, errors = 'ignore') as tf: solution_content = tf.read()
             list_of_solutions.append({'name': solution_name, 'content': solution_content})
         n = store.solutions_add(exercise_name, list_of_solutions)
         Store.LOGGER.info('Imported {} solution(s) for exercise {}'.format(n, exercise_name))
 
-        compiler_message = ''
-        if solution.main_source is None:
-            compiler_message = u'Missing (or ambiguous) solution'
-            Store.LOGGER.warn('Missing (or ambiguous) solution for {}'.format(exercise_name))
+        compilation_result = solution.compile()
+        if compilation_result.returncode:
+            compiler_message = compilation_result.stderr
+            Store.LOGGER.warn( 'Failed to compile exercise {}'.format(exercise_name))
         else:
-            compilation_result = solution.compile()
-            if compilation_result.returncode:
-                compiler_message = compilation_result.stderr
-                Store.LOGGER.warn( 'Failed to compile exercise {}'.format(exercise_name))
+            compiler_message = ''
         store.compilations_add(exercise_name, compiler_message)
 
         if compiler_message:
