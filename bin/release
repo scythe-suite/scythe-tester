@@ -2,7 +2,7 @@
 
 version=v$(grep 'VERSION\s*=' ./src/st/__init__.py | cut -d= -f2 | tr -d "' ")
 
-#./bin/mkdist
+./bin/mkdist
 
 git tag $version
 git push --tags
